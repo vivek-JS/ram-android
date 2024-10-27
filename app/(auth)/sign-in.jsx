@@ -2,12 +2,11 @@ import { useState } from "react";
 import { Link, router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, ScrollView, Dimensions, Alert, Image } from "react-native";
-
 import { images } from "../../constants";
 import { CustomButton, FormField } from "../../components";
 import { getCurrentUser, signIn } from "../../lib/appwrite";
 import { useGlobalContext } from "../../context/GlobalProvider";
-
+import axiosInstance from "../../components/api/api_instance";
 const SignIn = () => {
   const { setUser, setIsLogged } = useGlobalContext();
   const [isSubmitting, setSubmitting] = useState(false);
@@ -38,6 +37,24 @@ const SignIn = () => {
     }
   };
 
+  const fetchNames = async (name) => {
+    try {
+      const payload = {
+        email: form.email,
+        password: form.password,
+      };
+
+      const response = await axiosInstance.post("/user/login", payload); // Adjust endpoint as needed
+      console.log(response);
+      // setData(response.data);
+    } catch (err) {
+      //   setError(err.message);
+    } finally {
+      //     setLoading(false);
+    }
+    // setNames(data?.data?.data || [])
+  };
+
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView>
@@ -48,13 +65,14 @@ const SignIn = () => {
           }}
         >
           <Image
-            source={images.logo}
+            source={images.logoram}
             resizeMode="contain"
-            className="w-[115px] h-[34px]"
+            className="w-[400px] h-[150
+            px]"
           />
 
           <Text className="text-2xl font-semibold text-white mt-10 font-psemibold">
-            Log in to Aora
+            राम बायोटेक{" "}
           </Text>
 
           <FormField
@@ -74,7 +92,7 @@ const SignIn = () => {
 
           <CustomButton
             title="Sign In"
-            handlePress={submit}
+            handlePress={fetchNames}
             containerStyles="mt-7"
             isLoading={isSubmitting}
           />
