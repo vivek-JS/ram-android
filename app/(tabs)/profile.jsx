@@ -13,7 +13,7 @@ const Profile = () => {
   const { data: posts } = useAppwrite(() => getUserPosts(user.$id));
 
   const logout = async () => {
-    await signOut();
+    // await signOut();
     setUser(null);
     setIsLogged(false);
 

@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, ScrollView, Dimensions, Alert, Image } from "react-native";
 import { images } from "../../constants";
 import { CustomButton, FormField } from "../../components";
-import { getCurrentUser, signIn } from "../../lib/appwrite";
 import { useGlobalContext } from "../../context/GlobalProvider";
 import axiosInstance from "../../components/api/api_instance";
 const SignIn = () => {
@@ -15,46 +14,44 @@ const SignIn = () => {
     password: "",
   });
 
-  const submit = async () => {
-    if (form.email === "" || form.password === "") {
-      Alert.alert("Error", "Please fill in all fields");
-    }
-
-    setSubmitting(true);
-
+  const fetchNames = async () => {
     try {
-      await signIn(form.email, form.password);
-      const result = await getCurrentUser();
-      setUser(result);
-      setIsLogged(true);
+      setSubmitting(true);
 
-      Alert.alert("Success", "User signed in successfully");
-      router.replace("/home");
+      if (!form.email || !form.password) {
+        Alert.alert("Error", "Please fill in all fields");
+        return;
+      }
+
+      const payload = {
+        phoneNumber: parseInt(form.email),
+        password: form.password,
+      };
+
+      const response = await axiosInstance.post("/user/login", payload);
+      console.log("API Response:", response);
+
+      // Handle successful login
+      if (response.data) {
+        setUser(response.data);
+        setIsLogged(true);
+        Alert.alert("Success", "User signed in successfully");
+        router.replace("/home");
+      }
     } catch (error) {
-      Alert.alert("Error", error.message);
+      console.error("API Error:", error);
+
+      // Detailed error handling
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "An error occurred during sign in";
+
+      Alert.alert("Error", errorMessage);
     } finally {
       setSubmitting(false);
     }
   };
-
-  const fetchNames = async (name) => {
-    try {
-      const payload = {
-        email: form.email,
-        password: form.password,
-      };
-
-      const response = await axiosInstance.post("/user/login", payload); // Adjust endpoint as needed
-      console.log(response);
-      // setData(response.data);
-    } catch (err) {
-      //   setError(err.message);
-    } finally {
-      //     setLoading(false);
-    }
-    // setNames(data?.data?.data || [])
-  };
-
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView>

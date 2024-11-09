@@ -19,6 +19,7 @@ import { useGlobalContext } from "../../context/GlobalProvider";
 
 const Create = () => {
   const { user } = useGlobalContext();
+  console.log(user);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     title: "",
