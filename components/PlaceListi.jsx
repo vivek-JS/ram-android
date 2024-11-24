@@ -21,14 +21,18 @@ const PlaceCard = ({ item, index }) => {
     createdAt,
     numberOfPlants,
     typeOfPlants,
-    status = "In Process",
+    orderStatus = "Processing",
+    farmer,
+    advance,
+    dateOfAdvance,
   } = item || {};
+  const { name } = farmer || {};
   const handleCardPress = () => {
     router.push({
       pathname: "/add-place",
       params: {
         mode: "edit",
-        id: status, // Assuming your item has an _id
+        id: orderStatus, // Assuming your item has an _id
         data: JSON.stringify(item), // Sending the whole item as a stringified object
       },
     });
@@ -57,17 +61,19 @@ const PlaceCard = ({ item, index }) => {
   // Faint alternating background colors
   const bgColor = index % 2 === 0 ? "white" : "#F9FAFB";
   const statusColors = {
+    Accepted: "rgb(21 128 61)",
+
     Pending: "#FCD34D", // Yellow
     Rejected: "#F87171", // Red
-    "In Process": "#D1D5DB", // Light gray
+    Processing: "#D1D5DB", // Light gray
   };
-  const statusColor = statusColors[status] || "#9CA3AF"; // Default gray
+  const statusColor = statusColors[orderStatus] || "#9CA3AF"; // Default gray
 
   return (
     <View className="mb-6">
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={handleCardPress} // Add this handler
+        onPress={() => handleCardPress()} // Add this handler
         style={{
           backgroundColor: bgColor,
           borderRadius: 12,
@@ -81,23 +87,21 @@ const PlaceCard = ({ item, index }) => {
           elevation: 3,
         }}
       >
-        <View
-          style={{
-            backgroundColor: statusColor,
-            paddingVertical: 6,
-            paddingHorizontal: 8, // Slightly increased for padding around text
-            borderRadius: 4,
-            alignSelf: "flex-start", // Adapts width to the text content
-            zIndex: 1,
-          }}
-        >
-          <Text className="text-xs font-semibold text-white">{status}</Text>
-        </View>
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-lg font-bold text-gray-900">
-            Rajendra Patil
-          </Text>
-          <Text className="text-sm text-gray-600">{`(${typeOfPlants} | ${numberOfPlants})`}</Text>
+        <View className="flex justify-between flex-row">
+          <View
+            style={{
+              backgroundColor: statusColor,
+              paddingVertical: 6,
+              paddingHorizontal: 8, // Slightly increased for padding around text
+              borderRadius: 4,
+              alignSelf: "flex-start", // Adapts width to the text content
+              zIndex: 1,
+            }}
+          >
+            <Text className="text-xs font-semibold text-white">
+              {orderStatus}
+            </Text>
+          </View>
           <View className="flex-row items-center bg-gray-100 rounded-lg overflow-hidden ml-2">
             <TouchableOpacity
               onPress={handleEdit}
@@ -109,6 +113,11 @@ const PlaceCard = ({ item, index }) => {
               <Feather name="trash-2" size={14} color="#EF4444" />
             </TouchableOpacity>
           </View>
+        </View>
+
+        <View className="flex-row items-center justify-between mb-2">
+          <Text className="text-lg font-bold text-gray-900">{name}</Text>
+          <Text className="text-sm text-gray-600">{`(${typeOfPlants} | ${numberOfPlants})`}</Text>
         </View>
 
         <Text className="text-sm text-gray-800">
@@ -131,7 +140,10 @@ const PlaceCard = ({ item, index }) => {
 
         <View className="flex-row items-center justify-between mt-1">
           <Text className="text-sm font-medium text-gray-800">
-            Advance: <Text className="text-gray-900">$20000</Text>
+            Advance:{" "}
+            <Text className="text-gray-900">{`₹${advance} - ${moment(
+              dateOfAdvance
+            ).format("DD-MMM-YYYY")}`}</Text>
           </Text>
           <View className="w-5 h-5 rounded-full bg-yellow-400 items-center justify-center ml-2">
             <Feather name="check" size={12} color="black" />
@@ -153,23 +165,29 @@ const PlacesList = () => {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [isFilterActive, setIsFilterActive] = useState(false);
-
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   useEffect(() => {
-    getOrders();
-  }, []);
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 1000); // 500ms delay
+
+    return () => {
+      clearTimeout(handler); // Cleanup timeout on query change
+    };
+  }, [searchQuery]);
   useFocusEffect(
     useCallback(() => {
       getOrders();
-    }, [startDate, endDate, searchQuery])
+    }, [startDate, endDate, debouncedSearchQuery])
   );
 
   const getOrders = async () => {
-    console.log("hi in order");
     try {
       setLoading(true);
       const response = await axiosInstance.get("/order/getOrders", {
         params: {
           salesPerson: sales_id,
+          search: debouncedSearchQuery,
         },
       });
       if (response.data) {
@@ -182,7 +200,6 @@ const PlacesList = () => {
       setLoading(false);
     }
   };
-  console.log(orderList);
   const handleDateChange = (event, selectedDate, isStartDate) => {
     if (event.type === "set") {
       if (isStartDate) {
@@ -209,9 +226,7 @@ const PlacesList = () => {
 
   const FilterHeader = () => (
     <View className="mb-4">
-      <Text className="text-2xl font-bold mb-4 text-gray-900">
-        Places to Stay
-      </Text>
+      <Text className="text-2xl font-bold mb-4 text-gray-900">Place Order</Text>
 
       {/* Search Bar */}
       <View className="flex-row items-center bg-white rounded-lg mb-4 border border-gray-200">
@@ -223,6 +238,8 @@ const PlacesList = () => {
           placeholder="Search by type or number of plants..."
           value={searchQuery}
           onChangeText={setSearchQuery}
+          autoFocus={false} // Prevent auto-focus
+          returnKeyType="done" // Handle enter key gracefully
         />
         {searchQuery ? (
           <TouchableOpacity className="p-2" onPress={() => setSearchQuery("")}>
@@ -293,6 +310,7 @@ const PlacesList = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16 }}
         ListHeaderComponent={FilterHeader}
+        keyboardShouldPersistTaps="handled" // Ensure taps don't dismiss the keyboard
       />
     </View>
   );

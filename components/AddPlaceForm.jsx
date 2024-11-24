@@ -24,7 +24,6 @@ const AddPlaceForm = ({ navigation }) => {
 
   const handleSubmit = () => {
     // Handle form submission
-    console.log(formData);
     router.back();
   };
 

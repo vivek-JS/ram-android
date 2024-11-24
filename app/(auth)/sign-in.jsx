@@ -29,7 +29,6 @@ const SignIn = () => {
       };
 
       const response = await axiosInstance.post("/user/login", payload);
-      console.log("API Response:", response);
 
       // Handle successful login
       if (response.data) {
@@ -39,8 +38,6 @@ const SignIn = () => {
         router.replace("/home");
       }
     } catch (error) {
-      console.error("API Error:", error);
-
       // Detailed error handling
       const errorMessage =
         error.response?.data?.message ||
