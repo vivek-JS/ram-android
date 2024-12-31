@@ -1,3 +1,4 @@
+import moment from "moment";
 import axiosInstance from "../api/api_instance";
 
 export const getStates = async (seFunction) => {
@@ -138,7 +139,7 @@ export const getSubType = async (seFunction, plantId) => {
   // Handle form submission
   try {
     // setSubmitting(true);
-    const params = { plantId };
+    const params = { plantId, year: 2025 };
 
     const response = await axiosInstance.get("/slots/subtyps", {
       params,
@@ -148,9 +149,10 @@ export const getSubType = async (seFunction, plantId) => {
     if (response.data) {
       //    Alert.alert("Success", "Order added successfully");
       // router.back();
+      console.log(response?.data);
       seFunction(
-        response?.data.map((district) => {
-          return { label: district?.name, value: district?._id };
+        response?.data?.subtypes.map((district) => {
+          return { label: district?.subtypeName, value: district?.subtypeId };
         })
       );
     }
@@ -166,16 +168,19 @@ export const getSlots = async (seFunction, plantId, subtypeId) => {
   // Handle form submission
   try {
     // setSubmitting(true);
-    const params = { plantId, subtypeId, year: 2024 };
+    const params = { plantId, subtypeId, year: 2025 };
     const response = await axiosInstance.get("/slots/getslots", {
       params,
     });
+    console.log(response);
+    console.log("kanhaCCCC", response?.data?.slots[0]?.slots);
 
     // Handle successful login
-    if (response.data) {
+    if (response) {
       //    Alert.alert("Success", "Order added successfully");
       // router.back();
-      const data = response?.data[0]?.subtypeSlots[0]?.slots.filter(
+      console.log("kanha", response.data);
+      const data = response?.data?.slots[0]?.slots.filter(
         (slot) => slot?.status
       );
       seFunction(
@@ -189,12 +194,15 @@ export const getSlots = async (seFunction, plantId, subtypeId) => {
             status,
             _id,
           } = district || {};
+          const start = moment(startDay, "DD-MM-YYYY").format("D");
+          const end = moment(endDay, "DD-MM-YYYY").format("D");
+          const monthYear = moment(startDay, "DD-MM-YYYY").format("MMMM, YYYY");
           if (!status) {
             return;
           }
           return {
-            label: `${startDay} - ${endDay} ${month} (${
-              totalPlants - totalBookedPlants
+            label: `${start} - ${end} ${monthYear} (${
+              totalPlants + totalBookedPlants - totalBookedPlants
             })`,
             value: _id,
           };

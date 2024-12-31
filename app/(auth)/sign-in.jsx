@@ -34,7 +34,7 @@ const SignIn = () => {
       if (response.data) {
         setUser(response.data);
         setIsLogged(true);
-        Alert.alert("Success", "User signed in successfully");
+        // Alert.alert("Success", "User signed in successfully");
         router.replace("/home");
       }
     } catch (error) {

@@ -14,12 +14,31 @@ import { useEffect, useState } from "react";
 import SearchablePicker from "../../components/SearchablePicker";
 import { useGlobalContext } from "../../context/GlobalProvider";
 import {
-  getStates,
   getDistrict,
+  getStates,
   getTaluks,
   getVillages,
 } from "../../components/Helpers/districts";
 import axiosInstance from "../../components/api/api_instance";
+export const updateUser = async (formData, id) => {
+  try {
+    // Send PATCH request to the server
+    const response = await axiosInstance.patch("/user/updateUser", {
+      ...formData,
+      id,
+    });
+
+    if (response.status === 200) {
+      Alert.alert("Success", "Profile updated successfully");
+      return response.data; // Return response data if needed
+    } else {
+      Alert.alert("Error", "Failed to update profile");
+    }
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    Alert.alert("Error", "An error occurred while updating the profile");
+  }
+};
 const Profile = () => {
   const { user, setUser } = useGlobalContext();
   const {
@@ -33,6 +52,7 @@ const Profile = () => {
     defaultDistrict,
     defaultState,
   } = user?.response?.data || {};
+  console.log("user", defaultTaluka);
   const [isEditable, setIsEditable] = useState(false); // Toggle edit mode
   const [showStatePicker, setShowStatePicker] = useState(false);
   const [showDistrictPicker, setShowDistrictPicker] = useState(false);
@@ -53,10 +73,13 @@ const Profile = () => {
     type: type || "",
     phoneNumber: phoneNumber || "",
   });
-
+  console.log(formData);
   useEffect(() => {
+    console.log("formData");
+
     getStates(setStates);
   }, []);
+  console.log("states", states);
 
   useEffect(() => {
     getDistrict(setDistricts, formData?.defaultState);
@@ -76,28 +99,10 @@ const Profile = () => {
       );
     }
   }, [formData?.defaultTaluka, formData?.defaultDistrict]);
-  const updateUser = async (formData) => {
-    try {
-      // Send PATCH request to the server
-      const response = await axiosInstance.patch("/user/updateUser", {
-        ...formData,
-        id: _id,
-      });
 
-      if (response.status === 200) {
-        Alert.alert("Success", "Profile updated successfully");
-        return response.data; // Return response data if needed
-      } else {
-        Alert.alert("Error", "Failed to update profile");
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      Alert.alert("Error", "An error occurred while updating the profile");
-    }
-  };
   const handleSave = async () => {
     try {
-      const updatedData = await updateUser(formData);
+      const updatedData = await updateUser(formData, _id);
       if (updatedData) {
         setUser((prevUser) => ({
           ...prevUser,

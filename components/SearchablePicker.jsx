@@ -74,7 +74,7 @@ const SearchablePicker = ({
             renderItem={({ item }) => (
               <TouchableOpacity
                 onPress={() => {
-                  onSelect(item.value, item.label);
+                  onSelect(item.value, item.label, item);
                   onClose();
                 }}
                 className={`p-4 border-b border-gray-100 flex-row justify-between items-center ${

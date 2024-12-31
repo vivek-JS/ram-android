@@ -29,12 +29,19 @@ import {
   getTaluks,
   getVillages,
 } from "../components/Helpers/districts";
+import { Loader } from "../components";
 
 const AddPlaceForm = () => {
   const router = useRouter();
   const { user } = useGlobalContext();
-  const { defaultState, defaultDistrict, defaultTaluka, defaultVillage, _id } =
-    user?.response?.data || {};
+  const {
+    defaultState,
+    defaultDistrict,
+    defaultTaluka,
+    defaultVillage,
+    _id,
+    jobTitle,
+  } = user?.response?.data || {};
   const [showAdvanceDatePicker, setShowAdvanceDatePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showVillagePicker, setShowVillagePicker] = useState(false);
@@ -45,18 +52,19 @@ const AddPlaceForm = () => {
   const [showStatePicker, setShowStatePicker] = useState(false);
   const [showDistrictPicker, setShowDistrictPicker] = useState(false);
   const [showPlantTypePicker, setShowPlantTypePicker] = useState(false);
-  const [showPaymentMode, setShowPaymentModePicker] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [activeField, setActiveField] = useState(null);
   const [districts, setDistricts] = useState([]);
   const [taluka, setTaluka] = useState([]);
   const [villages, setVillages] = useState([]);
   const [states, setStates] = useState([]);
-
   const [plants, setPlants] = useState([]);
   const [subTypes, setSubTypes] = useState([]);
   const [slots, setSlots] = useState([]);
   const [farmerData, setFarmerData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [isInstantOrder, setIsInstantOrder] = useState(
+    jobTitle === "OFFICE_STAFF" ? true : false
+  );
+
   const params = useLocalSearchParams();
   const mode = params.mode; // 'edit' or 'create'
   const itemData = params.data ? JSON.parse(params.data) : null; // Parse the stringified data
@@ -90,34 +98,60 @@ const AddPlaceForm = () => {
       ? taluka.find((taluka) => taluka?.value == defaultTaluka)?.label
       : "",
   });
-
+  const [rate, setRate] = useState(null);
+  const [available, setAvailable] = useState(null);
+  console.log(rate);
+  console.log(available);
   useEffect(() => {
+    if (!farmerData && !farmerData?.name) {
+      setFormData({
+        ...formData,
+        name: "",
+        village: defaultVillage || "",
+        state: defaultState || "",
+        district: defaultDistrict || "",
+        taluka: defaultTaluka || "",
+      });
+      return;
+    }
     setFormData({
       ...formData,
       name: farmerData?.name,
+      village: farmerData?.village,
+      state: farmerData?.state,
+      district: farmerData?.district,
+      taluka: farmerData?.taluka,
     });
   }, [farmerData]);
-
   useEffect(() => {
     if (formData?.mobileNumber?.length === 10) {
-      getFarmer(formData?.mobileNumber, setFarmerData);
+      getFarmer(formData?.mobileNumber, setFarmerData, setLoading);
+    } else if (farmerData && formData?.mobileNumber?.length < 10) {
+      setFormData({
+        ...formData,
+        name: "",
+        village: defaultVillage || "",
+        state: defaultState || "",
+        district: defaultDistrict || "",
+        taluka: defaultTaluka || "",
+      });
     }
   }, [formData?.mobileNumber.length]);
   useEffect(() => {
     // getDistricts();
     //getTaluka();
     // getDistrict(setDistricts);
-    getStates(setStates);
-    getPlants(setPlants);
+    getStates(setStates, setLoading);
+    getPlants(setPlants, setLoading);
   }, []);
   useEffect(() => {
-    getSubType(setSubTypes, formData?.plant);
+    getSubType(setSubTypes, formData?.plant, setLoading);
   }, [formData?.plant]);
   useEffect(() => {
-    getDistrict(setDistricts, formData?.state);
+    getDistrict(setDistricts, formData?.state, setLoading);
   }, [formData?.state]);
   useEffect(() => {
-    getTaluks(setTaluka, formData?.state, formData?.district);
+    getTaluks(setTaluka, formData?.state, formData?.district, setLoading);
   }, [formData?.district]);
   useEffect(() => {
     if (formData?.district && formData?.taluka) {
@@ -125,106 +159,90 @@ const AddPlaceForm = () => {
         setVillages,
         formData?.taluka,
         formData?.district,
-        formData?.state
+        formData?.state,
+        setLoading
       );
     }
   }, [formData?.taluka, formData?.district]);
   useEffect(() => {
-    getSlots(setSlots, formData?.plant, formData?.subtype);
+    getSlots(setSlots, formData?.plant, formData?.subtype, setLoading);
   }, [formData?.subtype]);
 
   const handleSubmit = async () => {
-    // Handle form submission
+    // Show confirmation alert before submission
     console.log(formData);
+    Alert.alert(
+      "Confirm Order",
+      `Are you sure you want to add an order for **${formData.name}**?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          onPress: async () => {
+            try {
+              setLoading(true);
 
-    try {
-      // setSubmitting(true);
+              const payload = {
+                name: formData.name,
+                village: formData.village,
+                taluka: formData.taluka,
+                state: formData.state,
+                district: formData.district,
+                talukaName:
+                  formData.talukaName ||
+                  taluka.find((t) => t.value == defaultTaluka)?.label,
+                stateName:
+                  formData.stateName ||
+                  states.find((s) => s.value == defaultState)?.label,
+                districtName:
+                  formData.districtName ||
+                  districts.find((d) => d.value == defaultDistrict)?.label,
+                mobileNumber: formData.mobileNumber,
+                typeOfPlants: formData.typeOfPlant,
+                numberOfPlants: formData.noOfPlants,
+                rate: formData.rate,
+                paymentStatus: "not paid",
+                salesPerson: _id,
+                orderStatus: isInstantOrder ? "DISPATCHED" : "PENDING",
+                plantName: formData.plant,
+                plantSubtype: formData.subtype,
+                bookingSlot: formData.selectedSlot,
+                orderPaymentStatus: "PENDING",
+              };
 
-      const payload = {
-        name: formData.name,
-        village: formData?.village,
-        taluka: formData?.taluka,
-        state: formData?.state,
-        district: formData?.district,
-        talukaName:
-          formData?.talukaName ||
-          taluka.find((taluka) => taluka?.value == defaultTaluka)?.label,
-        stateName:
-          formData?.stateName ||
-          states.find((states) => states?.value == defaultState)?.label,
-        districtName:
-          formData?.districtName ||
-          districts.find((districts) => districts?.value == defaultDistrict)
-            ?.label,
-        mobileNumber: formData?.mobileNumber,
-        typeOfPlants: formData?.typeOfPlant,
-        numberOfPlants: formData?.noOfPlants,
-        rate: formData?.rate,
-        paymentStatus: "not paid",
-        salesPerson: _id,
-        modeOfPayment: formData?.paymentMode,
-        advance: formData?.advance,
-        dateOfAdvance: formData?.dateOfAdvance,
-        bankName: formData?.bankName,
-        orderStatus: "pending",
-        plantName: formData?.plant,
-        plantSubtype: formData?.subtype,
-        bookingSlot: formData?.selectedSlot,
-      };
-      console.log(payload);
+              const response = await axiosInstance.post(
+                "/farmer/createFarmer",
+                payload,
+                {
+                  headers: {
+                    "Content-Type": "application/json", // Changed from multipart/form-data to application/json
+                  },
+                }
+              );
 
-      const response = await axiosInstance.post(
-        "/farmer/createFarmer",
-        payload
-      );
-      // Handle successful login
-      if (response.data) {
-        Alert.alert("Success", "Order added successfully");
-        router.back();
-      }
-    } catch (error) {
-      // Detailed error handling
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "An error occurred during sign in";
-
-      Alert.alert("Error", errorMessage);
-    } finally {
-      // setSubmitting(false);
-    }
+              if (response.data) {
+                Alert.alert("Success", "Order added successfully");
+                router.back();
+              }
+            } catch (error) {
+              console.log(error);
+              const errorMessage =
+                error.response?.data?.message ||
+                error.message ||
+                "An error occurred during sign in";
+              Alert.alert("Error", errorMessage);
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const handleImagePicker = async () => {
-    try {
-      // Request permissions using Expo's ImagePicker
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission denied",
-          "Please grant media library permission to select photos."
-        );
-        return;
-      }
-
-      // Open image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
-
-      if (!result.canceled) {
-        // Note: it's 'canceled' not 'cancelled' in newer versions
-        setFormData({ ...formData, receiptPhoto: result.assets[0].uri });
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to pick image");
-    }
-  };
   const handleDateChange = (event, date) => {
     if (event.type === "set") {
       setFormData({ ...formData, date: date });
@@ -233,97 +251,12 @@ const AddPlaceForm = () => {
     }
     setShowDatePicker(false);
   };
-  const plantsOptions = [
-    { label: "Banana", value: "Banana" },
-    { label: "Shrimanti", value: "Shrimanti" },
-    // Add more talukas here...
-  ];
-
-  const paymentOPtions = [
-    { label: "Cash", value: "Cash" },
-    { label: "Phone Pe", value: "Phone Pe" },
-    { label: "Google Pay", value: "Google Pay" },
-    { label: "Cheque", value: "Cheque" },
-    { label: "JPCS", value: "JPCB" },
-
-    // Add more talukas here...
-  ];
-
-  const handleAdvanceDateChange = (event, date) => {
-    if (event.type === "set") {
-      setFormData({ ...formData, dateOfAdvance: date });
-    } else {
-      setFormData({ ...formData, dateOfAdvance: new Date() });
-    }
-  };
-
-  // Initialize voice recognition
-  useEffect(() => {
-    function onSpeechResults(e) {
-      if (e.value && activeField) {
-        const spokenText = e.value[0];
-        if (
-          activeField === "noOfPlants" ||
-          activeField === "rate" ||
-          activeField === "advance"
-        ) {
-          // Extract numbers from spoken text
-          const numbers = spokenText.match(/\d+/g);
-          if (numbers) {
-            handleNumberInput(numbers[0], activeField);
-          }
-        } else {
-          setFormData((prev) => ({
-            ...prev,
-            [activeField]: spokenText,
-          }));
-        }
-      }
-      setIsListening(false);
-      setActiveField(null);
-    }
-
-    function onSpeechError(e) {
-      setIsListening(false);
-      setActiveField(null);
-      Alert.alert("Error", "Failed to recognize speech. Please try again.");
-    }
-
-    Voice.onSpeechResults = onSpeechResults;
-    Voice.onSpeechError = onSpeechError;
-
-    // Cleanup
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
-  }, [activeField]);
-
-  const startListening = async (field) => {
-    try {
-      await Voice.start("en-US");
-      setIsListening(true);
-      setActiveField(field);
-    } catch (e) {
-      Alert.alert(
-        "Error",
-        "Failed to start voice recognition. Please try again."
-      );
-    }
-  };
 
   // Function to stop voice recognition
-  const stopListening = async () => {
-    try {
-      await Voice.stop();
-      setIsListening(false);
-      setActiveField(null);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   return (
     <SafeAreaView className="flex-1 bg-white">
+      <Loader isLoading={loading} />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -337,6 +270,44 @@ const AddPlaceForm = () => {
 
         <ScrollView className="flex-1 p-4">
           <View className="space-y-4">
+            {jobTitle === "OFFICE_STAFF" && (
+              <View className="flex-row items-center justify-between p-4 bg-gray-50">
+                <View className="flex-row items-center bg-gray-200 rounded-lg p-1">
+                  <TouchableOpacity
+                    onPress={() => setIsInstantOrder(false)}
+                    className={`px-4 py-2 rounded-md ${
+                      !isInstantOrder ? "bg-white shadow" : ""
+                    }`}
+                  >
+                    <Text
+                      className={`${
+                        !isInstantOrder
+                          ? "text-blue-500 font-medium"
+                          : "text-gray-600"
+                      }`}
+                    >
+                      Normal Order
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setIsInstantOrder(true)}
+                    className={`px-4 py-2 rounded-md ${
+                      isInstantOrder ? "bg-white shadow" : ""
+                    }`}
+                  >
+                    <Text
+                      className={`${
+                        isInstantOrder
+                          ? "text-blue-500 font-medium"
+                          : "text-gray-600"
+                      }`}
+                    >
+                      Instant Order
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
             <View>
               <Text className="text-gray-700 mb-2">Date</Text>
               <TouchableOpacity onPress={() => setShowDatePicker(true)}>
@@ -355,28 +326,34 @@ const AddPlaceForm = () => {
             </View>
 
             <View>
-              <Text className="text-gray-700 mb-2">Farmer Name</Text>
-              <TextInput
-                className="border border-gray-200 rounded-lg p-3 bg-white"
-                field="name"
-                placeholder="Farmer Name"
-                value={formData.name}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, name: text })
-                }
-              />
-            </View>
-            <View>
               <Text className="text-gray-700 mb-2">Mobile Number</Text>
               <TextInput
                 className="border border-gray-200 rounded-lg p-3 bg-white"
                 placeholder="Enter mobile number"
                 keyboardType="numeric"
+                maxLength={10} // Limit input to 10 characters
                 value={formData.mobileNumber}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, mobileNumber: text })
-                }
+                onChangeText={(text) => {
+                  // Allow only numeric values and trim to 10 digits
+                  const sanitizedText = text
+                    .replace(/[^0-9]/g, "")
+                    .slice(0, 10);
+                  setFormData({ ...formData, mobileNumber: sanitizedText });
+                }}
               />
+
+              <View>
+                <Text className="text-gray-700 mb-2">Farmer Name</Text>
+                <TextInput
+                  className="border border-gray-200 rounded-lg p-3 bg-white"
+                  field="name"
+                  placeholder="Farmer Name"
+                  value={formData.name}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, name: text })
+                  }
+                />
+              </View>
               <View>
                 <Text className="text-gray-700 mb-2">States</Text>
                 <TouchableOpacity
@@ -519,9 +496,11 @@ const AddPlaceForm = () => {
                       <SearchablePicker
                         isVisible={showSubPicker}
                         onClose={() => setShowSubPicker(false)}
-                        onSelect={(value) =>
-                          setFormData({ ...formData, subtype: value })
-                        }
+                        onSelect={(value, label, item) => {
+                          console.log(label);
+                          setFormData({ ...formData, subtype: value });
+                          setRate(item?.rate);
+                        }}
                         options={subTypes}
                         selectedValue={formData.subtype}
                         title="Select Subtype"
@@ -544,38 +523,15 @@ const AddPlaceForm = () => {
                       <SearchablePicker
                         isVisible={showSlotPicker}
                         onClose={() => setShowSlotPicker(false)}
-                        onSelect={(value) =>
-                          setFormData({ ...formData, selectedSlot: value })
-                        }
+                        onSelect={(value, label, item) => {
+                          setFormData({ ...formData, selectedSlot: value });
+                          setAvailable(item);
+                        }}
                         options={slots}
                         selectedValue={formData.selectedSlot}
                         title="Select Slot"
                       />
                     </View>
-                    {/* 
-                    <View>
-                      <Text className="text-gray-700 mb-2">Subtype</Text>
-                      <TextInput
-                        className="border border-gray-200 rounded-lg p-3 bg-white"
-                        placeholder="Select subtype"
-                        value={group.subtype}
-                        onChangeText={(text) =>
-                          handleGroupChange(index, "subtype", text)
-                        }
-                      />
-                    </View>
-
-                    <View>
-                      <Text className="text-gray-700 mb-2">Selected Slot</Text>
-                      <TextInput
-                        className="border border-gray-200 rounded-lg p-3 bg-white"
-                        placeholder="Select slot"
-                        value={group.selectedSlot}
-                        onChangeText={(text) =>
-                          handleGroupChange(index, "selectedSlot", text)
-                        }
-                      />
-                    </View> */}
                   </View>
                 </View>
               </View>
@@ -599,138 +555,18 @@ const AddPlaceForm = () => {
             </View>
 
             <View>
-              <Text className="text-gray-700 mb-2">Type Of Plant</Text>
-              <TouchableOpacity
-                onPress={() => setShowPlantTypePicker(true)}
-                className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
-              >
-                <Text>
-                  {plantsOptions.find(
-                    (opt) => opt.value === formData.typeOfPlant
-                  )?.label || "Select Plant"}
-                </Text>
-                <AntDesign name="down" size={16} color="gray" />
-              </TouchableOpacity>
-              <SearchablePicker
-                isVisible={showPlantTypePicker}
-                onClose={() => setShowPlantTypePicker(false)}
-                onSelect={(value) =>
-                  setFormData({ ...formData, typeOfPlant: value })
-                }
-                options={plantsOptions}
-                selectedValue={formData.typeOfPlant}
-                title="Select Plant"
-              />
-            </View>
-
-            <View>
               <Text className="text-gray-700 mb-2">Rate</Text>
               <TextInput
                 className="border border-gray-200 rounded-lg p-3 bg-white"
                 placeholder="Enter rate"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={formData.rate.toString()}
                 onChangeText={(text) => {
-                  if (text) {
-                    setFormData({ ...formData, rate: parseFloat(text) });
-                  } else {
-                    setFormData({ ...formData, rate: "" });
+                  const decimalRegex = /^\d*\.?\d*$/;
+                  if (text === "" || decimalRegex.test(text)) {
+                    setFormData({ ...formData, rate: text === "" ? "" : text });
                   }
                 }}
-              />
-            </View>
-
-            <View>
-              <Text className="text-gray-700 mb-2">Advance</Text>
-              <TextInput
-                className="border border-gray-200 rounded-lg p-3 bg-white"
-                placeholder="Enter advance"
-                keyboardType="numeric"
-                value={formData.advance.toString()}
-                onChangeText={(text) => {
-                  if (text) {
-                    setFormData({ ...formData, advance: parseFloat(text) });
-                  } else {
-                    setFormData({ ...formData, advance: "" });
-                  }
-                }}
-              />
-            </View>
-
-            <View>
-              <Text className="text-gray-700 mb-2">Date of Advance</Text>
-              <TouchableOpacity onPress={() => setShowAdvanceDatePicker(true)}>
-                <View className="border border-gray-200 rounded-lg p-3 bg-white">
-                  <Text>{formData.dateOfAdvance.toDateString()}</Text>
-                </View>
-              </TouchableOpacity>
-              {showAdvanceDatePicker && (
-                <DateTimePicker
-                  value={formData.dateOfAdvance}
-                  mode="date"
-                  display="default"
-                  onChange={handleAdvanceDateChange}
-                />
-              )}
-            </View>
-            <View>
-              <Text className="text-gray-700 mb-2">Payment Mode</Text>
-              <TouchableOpacity
-                onPress={() => setShowPaymentModePicker(true)}
-                className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
-              >
-                <Text>
-                  {paymentOPtions.find(
-                    (opt) => opt.value === formData.paymentMode
-                  )?.label || "Select Payment Mode"}
-                </Text>
-                <AntDesign name="down" size={16} color="gray" />
-              </TouchableOpacity>
-              <SearchablePicker
-                isVisible={showPaymentMode}
-                onClose={() => setShowPaymentModePicker(false)}
-                onSelect={(value) =>
-                  setFormData({ ...formData, paymentMode: value })
-                }
-                options={paymentOPtions}
-                selectedValue={formData.paymentMode}
-                title="Select Payment Mode"
-              />
-            </View>
-
-            {formData?.paymentMode !== "Cash" &&
-              formData?.paymentMode !== "" && (
-                <View>
-                  <Text className="text-gray-700 mb-2">
-                    Receipt/Cheque Photo
-                  </Text>
-                  {formData.receiptPhoto ? (
-                    <Image
-                      source={{ uri: formData.receiptPhoto }}
-                      style={{ width: "100%", height: 200 }}
-                    />
-                  ) : (
-                    <TouchableOpacity
-                      onPress={handleImagePicker}
-                      className="border border-gray-200 rounded-lg p-3 bg-white items-center"
-                    >
-                      <Text className="text-gray-700">
-                        Select Receipt/Cheque Photo{" "}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              )}
-
-            <View>
-              <Text className="text-gray-700 mb-2">Bank Name</Text>
-              <TextInput
-                className="border border-gray-200 rounded-lg p-3 bg-white"
-                placeholder="Enter bank name"
-                value={formData.bankName}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, bankName: text })
-                }
               />
             </View>
           </View>

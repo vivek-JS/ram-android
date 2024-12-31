@@ -9,6 +9,8 @@ import {
   Image,
   RefreshControl,
   Modal,
+  Linking,
+  ScrollView,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useGlobalContext } from "../context/GlobalProvider";
@@ -48,15 +50,22 @@ const PlaceCard = ({ item, index, getOrders }) => {
     rate,
     plantType,
     bookingSlot,
+    _id,
+    farmReadyDate: farmReadyDateApi,
   } = item || {};
+  console.log(item);
+  console.log("farmReadyDateApi", farmReadyDateApi);
 
-  const { startDay, endDay } = bookingSlot[0] || {};
-  const start = moment(startDay, "DD-MM-YYYY").format("D");
-  const end = moment(endDay, "DD-MM-YYYY").format("D");
-  const monthYear = moment(startDay, "DD-MM-YYYY").format("MMMM, YYYY");
-  const { name, district, taluka, village } = farmer || {};
+  const { name, district, taluka, village, mobileNumber } = farmer || {};
   const [isCollapsed, setIsCollapsed] = useState(true);
   const handleCollapseToggle = () => setIsCollapsed(!isCollapsed);
+  const [showFarmReadyDatePicker, setShowFarmReadyDatePicker] = useState(false);
+  const [farmReadyDate, setFarmReadyDate] = useState(farmReadyDateApi || null);
+  console.log("farmReadyDate", farmReadyDate);
+  useEffect(() => {
+    setFarmReadyDate(farmReadyDateApi);
+  }, [farmReadyDateApi]);
+
   const [isAddPaymentModalVisible, setAddPaymentModalVisible] = useState(false);
   const [newPayment, setNewPayment] = useState({
     paidAmount: "",
@@ -154,7 +163,44 @@ const PlaceCard = ({ item, index, getOrders }) => {
       });
     }
   };
+  const getDateRange = () => {
+    const { startDay, endDay } = bookingSlot[0] || {};
+    const start = moment(startDay, "DD-MM-YYYY").subtract(5, "days").toDate();
+    const end = moment(endDay, "DD-MM-YYYY").add(5, "days").toDate();
+    return { start, end };
+  };
+  const handleFarmReadyDateChange = (event, selectedDate) => {
+    setShowFarmReadyDatePicker(false);
+    if (selectedDate) {
+      setFarmReadyDate(selectedDate);
+      // Here you can add API call to update the farm ready date
+    }
+  };
+  const pacthOrders = async (patchObj, row) => {
+    //setpatchLoading(true);
 
+    const response = await axiosInstance.patch("/order/updateOrder", {
+      orderStatus: "FARM_READY",
+      id: _id,
+      farmReadyDate: farmReadyDate,
+    });
+    console.log("response", response);
+    getOrders();
+    // const instance = NetworkManager(API.ORDER.UPDATE_ORDER);
+    // const emps = await instance.request({
+    //   ...patchObj,
+    //   numberOfPlants: patchObj?.quantity,
+    // });
+
+    //    setpatchLoading(false);
+
+    // setEmployees(emps?.data?.data)
+  };
+
+  const { startDay, endDay } = bookingSlot[0] || {};
+  const start = moment(startDay, "DD-MM-YYYY").format("D");
+  const end = moment(endDay, "DD-MM-YYYY").format("D");
+  const monthYear = moment(startDay, "DD-MM-YYYY").format("MMMM, YYYY");
   return (
     <View className="mb-6">
       <TouchableOpacity
@@ -223,7 +269,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
 
           {/* Order ID */}
           <Text style={{ fontSize: 14, fontWeight: "600", color: "#6B7280" }}>
-            Order #: {orderId}
+            Orderdd #: {orderId}
           </Text>
         </View>
 
@@ -243,8 +289,65 @@ const PlaceCard = ({ item, index, getOrders }) => {
             {taluka} → {village}
           </Text>
         </View>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "#F3F4F6",
+            padding: 8,
+            borderRadius: 8,
+            marginBottom: 6,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <Feather
+              name="phone"
+              size={16}
+              color="#059669"
+              style={{ marginRight: 8 }}
+            />
+            <Text style={{ fontSize: 14, color: "#374151", flex: 1 }}>
+              {mobileNumber || "No phone number"}
+            </Text>
+          </View>
+          {mobileNumber && (
+            <TouchableOpacity
+              onPress={() => {
+                const url = `tel:${mobileNumber}`;
+                Linking.canOpenURL(url)
+                  .then((supported) => {
+                    if (!supported) {
+                      Alert.alert("Phone number is not available");
+                    } else {
+                      return Linking.openURL(url);
+                    }
+                  })
+                  .catch((err) => console.error("An error occurred", err));
+              }}
+              style={{
+                backgroundColor: "#059669",
+                padding: 6,
+                borderRadius: 6,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <Feather
+                name="phone-call"
+                size={14}
+                color="#ffffff"
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={{ color: "#ffffff", fontSize: 12, fontWeight: "600" }}
+              >
+                Call Now
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={{ fontSize: 14, color: "#111827", marginVertical: 6 }}>
-          Booking Date:{" "}
+          Booking Dateddd:{" "}
           <Text style={{ fontWeight: "600" }}>
             {moment(createdAt).format("DD-MMM-YYYY")}
           </Text>
@@ -255,7 +358,6 @@ const PlaceCard = ({ item, index, getOrders }) => {
             {`${start} - ${end} ${monthYear}`}{" "}
           </Text>
         </Text>
-        {/*  */}
         <View
           style={{
             flexDirection: "row",
@@ -270,7 +372,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
           {/* Plant Name Column */}
           <View style={{ flex: 1, alignItems: "center" }}>
             <Text style={{ fontSize: 12, color: "#059669", marginBottom: 4 }}>
-              Plant Type
+              Plant Typess
             </Text>
             <Text
               style={{
@@ -388,6 +490,59 @@ const PlaceCard = ({ item, index, getOrders }) => {
           </View>
         </View>
 
+        <TouchableOpacity
+          onPress={() => setShowFarmReadyDatePicker(true)}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginVertical: 8,
+          }}
+        >
+          <Text style={{ fontSize: 14, color: "#111827", marginRight: 8 }}>
+            Farm Ready Date:{" "}
+            <Text style={{ fontWeight: "600" }}>
+              {farmReadyDate
+                ? moment(farmReadyDate).format("DD-MMM-YYYY")
+                : "Not set"}
+            </Text>
+          </Text>
+          <Feather name="calendar" size={16} color="#059669" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            // Add your farm ready API call here
+            pacthOrders({ orderStatus: "FARM_READY", id: _id });
+          }}
+          style={{
+            backgroundColor: farmReadyDate ? "#059669" : "#D1D5DB",
+            paddingVertical: 8,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            alignItems: "center",
+            opacity: farmReadyDate ? 1 : 0.5,
+          }}
+          disabled={!farmReadyDate}
+        >
+          <Text
+            style={{
+              color: "#ffffff",
+              fontSize: 14,
+              fontWeight: "600",
+            }}
+          >
+            Farm Ready
+          </Text>
+        </TouchableOpacity>
+        {showFarmReadyDatePicker && (
+          <DateTimePicker
+            value={farmReadyDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={handleFarmReadyDateChange}
+            minimumDate={getDateRange().start}
+            maximumDate={getDateRange().end}
+          />
+        )}
         {/* Divider */}
         <View
           style={{
@@ -444,7 +599,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
               )}
 
               {/* Add Payment Button */}
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={{
                   marginTop: 16,
                   backgroundColor: "#10B981",
@@ -459,7 +614,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
                 >
                   Add Payment
                 </Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           )}
         </View>
@@ -722,7 +877,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
     </View>
   );
 };
-const PlacesList = () => {
+const DispatchList = () => {
   const { user } = useGlobalContext();
   const sales_id = user?.response?.data?._id;
   const [orderList, setOrderList] = useState([]);
@@ -735,15 +890,121 @@ const PlacesList = () => {
   const [isFilterActive, setIsFilterActive] = useState(false);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 1000); // 500ms delay
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [selectedPlantTypes, setSelectedPlantTypes] = useState([]);
+  const [selectedVillages, setSelectedVillages] = useState([]);
+  const [selectedSubtypes, setSelectedSubtypes] = useState([]);
+  const [selectedTalukas, setSelectedTalukas] = useState([]);
+  // Get unique values from the order list
 
-    return () => {
-      clearTimeout(handler); // Cleanup timeout on query change
-    };
-  }, [searchQuery]);
+  const [uniquePlantTypes, setUniquePlantTypes] = useState([]);
+  // Get subtypes based on selected plant types
+  const uniqueSubtypes = [
+    ...new Set(
+      orderList
+        .filter(
+          (order) =>
+            selectedPlantTypes.length === 0 ||
+            selectedPlantTypes.includes(order?.plantType?.name)
+        )
+        .map((order) => order?.plantSubtype?.name)
+    ),
+  ].filter(Boolean);
+
+  // Get unique talukas and villages
+  const uniqueTalukas = [
+    ...new Set(orderList.map((order) => order?.farmer?.taluka)),
+  ].filter(Boolean);
+
+  const togglePlantType = (type) => {
+    setSelectedPlantTypes((prev) => {
+      const newTypes = prev.includes(type)
+        ? prev.filter((t) => t !== type)
+        : [...prev, type];
+      // Clear subtypes when plant types change
+      setSelectedSubtypes([]);
+      return newTypes;
+    });
+  };
+
+  const toggleSubtype = (subtype) => {
+    setSelectedSubtypes((prev) =>
+      prev.includes(subtype)
+        ? prev.filter((s) => s !== subtype)
+        : [...prev, subtype]
+    );
+  };
+
+  const toggleTaluka = (taluka) => {
+    setSelectedTalukas((prev) => {
+      const newTalukas = prev.includes(taluka)
+        ? prev.filter((t) => t !== taluka)
+        : [...prev, taluka];
+      // Clear villages when talukas change
+      setSelectedVillages([]);
+      return newTalukas;
+    });
+  };
+
+  const toggleVillage = (village) => {
+    setSelectedVillages((prev) =>
+      prev.includes(village)
+        ? prev.filter((v) => v !== village)
+        : [...prev, village]
+    );
+  };
+
+  const applyFilters = () => {
+    let filtered = [...orderList];
+
+    // Apply plant type filter
+    if (selectedPlantTypes.length > 0) {
+      filtered = filtered.filter((order) =>
+        selectedPlantTypes.includes(order?.plantType?.name)
+      );
+    }
+
+    // Apply subtype filter
+    if (selectedSubtypes.length > 0) {
+      filtered = filtered.filter((order) =>
+        selectedSubtypes.includes(order?.plantSubtype?.name)
+      );
+    }
+
+    // Apply taluka filter
+    if (selectedTalukas.length > 0) {
+      filtered = filtered.filter((order) =>
+        selectedTalukas.includes(order?.farmer?.taluka)
+      );
+    }
+
+    // Apply village filter
+    if (selectedVillages.length > 0) {
+      filtered = filtered.filter((order) =>
+        selectedVillages.includes(order?.farmer?.village)
+      );
+    }
+
+    setOrderList(filtered);
+    setShowFilterModal(false);
+    setIsFilterActive(true);
+  };
+
+  // Filter Modal State
+
+  const [uniqueVillages, setUniqueVillages] = useState([]);
+
+  // Extract unique values effect
+  useEffect(() => {
+    const plantTypes = [
+      ...new Set(orderList.map((order) => order?.plantType?.name)),
+    ].filter(Boolean);
+    const villages = [
+      ...new Set(orderList.map((order) => order?.farmer?.village)),
+    ].filter(Boolean);
+    setUniquePlantTypes(plantTypes);
+    setUniqueVillages(villages);
+  }, [orderList]);
   useFocusEffect(
     useCallback(() => {
       getOrders();
@@ -759,6 +1020,8 @@ const PlacesList = () => {
           search: debouncedSearchQuery,
           startDate: moment(startDate).format("DD-MM-YYYY"),
           endDate: moment(endDate).format("DD-MM-YYYY"),
+          dispatched: true,
+          status: "FARM_READY",
         },
       });
       if (response.data) {
@@ -798,8 +1061,6 @@ const PlacesList = () => {
 
   const clearFilters = () => {
     setSearchQuery("");
-    setStartDate(new Date());
-    setEndDate(new Date());
     setIsFilterActive(false);
     //setFilteredOrders(orderList);
   };
@@ -827,7 +1088,118 @@ const PlacesList = () => {
           </TouchableOpacity>
         ) : null}
       </View>
+      <TouchableOpacity
+        className="flex-row items-center justify-center bg-white p-3 rounded-lg mb-4 border border-gray-200"
+        onPress={() => setShowFilterModal(true)}
+      >
+        <Feather name="filter" size={18} color="#6B7280" />
+        <Text className="ml-2 text-gray-700 font-medium">Filters</Text>
+      </TouchableOpacity>
 
+      <Modal
+        visible={showFilterModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <View className="flex-1 bg-black bg-opacity-50">
+          <View className="mt-auto bg-white rounded-t-3xl p-6">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-xl font-bold text-gray-900">Filters</Text>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+                <Feather name="x" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-base font-semibold text-gray-700 mb-2">
+              Plant Types
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="mb-4"
+            >
+              {uniquePlantTypes.map((type, index) => (
+                <TouchableOpacity
+                  key={index}
+                  className={`mr-2 px-4 py-2 rounded-full ${
+                    selectedPlantTypes.includes(type)
+                      ? "bg-green-600"
+                      : "bg-gray-100"
+                  }`}
+                  onPress={() => togglePlantType(type)}
+                >
+                  <Text
+                    className={`${
+                      selectedPlantTypes.includes(type)
+                        ? "text-white"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text className="text-base font-semibold text-gray-700 mb-2">
+              Villages
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="mb-6"
+            >
+              {uniqueVillages.map((village, index) => (
+                <TouchableOpacity
+                  key={index}
+                  className={`mr-2 px-4 py-2 rounded-full ${
+                    selectedVillages.includes(village)
+                      ? "bg-green-600"
+                      : "bg-gray-100"
+                  }`}
+                  onPress={() => toggleVillage(village)}
+                >
+                  <Text
+                    className={`${
+                      selectedVillages.includes(village)
+                        ? "text-white"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {village}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              className="bg-green-600 p-4 rounded-lg items-center"
+              onPress={() => {
+                applyFilters();
+                setShowFilterModal(false);
+              }}
+            >
+              <Text className="text-white font-semibold text-base">
+                Apply Filters
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Clear Filters Button */}
+      {(searchQuery ||
+        isFilterActive ||
+        selectedPlantTypes.length > 0 ||
+        selectedVillages.length > 0) && (
+        <TouchableOpacity
+          className="bg-gray-100 p-2 rounded-lg items-center mb-4"
+          onPress={clearFilters}
+        >
+          <Text className="text-gray-700 font-medium">Clear All Filters</Text>
+        </TouchableOpacity>
+      )}
       {/* Date Filters */}
       <View className="flex-row justify-between items-center mb-4">
         <TouchableOpacity
@@ -899,4 +1271,4 @@ const PlacesList = () => {
   );
 };
 
-export default PlacesList;
+export default DispatchList;

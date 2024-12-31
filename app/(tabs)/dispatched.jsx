@@ -15,8 +15,9 @@ import AntDesign from "react-native-vector-icons/AntDesign";
 import { useRouter } from "expo-router";
 import { useGlobalContext } from "../../context/GlobalProvider";
 import { updateUser } from "./profile";
+import DispatchList from "../../components/DispatchList";
 
-const Home = () => {
+const Dispacthed = () => {
   const router = useRouter();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -65,7 +66,7 @@ const Home = () => {
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Main Content */}
-      <PlacesList />
+      <DispatchList />
       <TouchableOpacity
         onPress={handleAddPress}
         className="absolute bottom-6 right-6 bg-blue-500 w-14 h-14 rounded-full items-center justify-center shadow-lg"
@@ -151,4 +152,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Home;
+export default Dispacthed;
