@@ -33,7 +33,7 @@ const SearchablePicker = ({
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredOptions = options.filter((option) =>
-    option?.label?.toLowerCase().includes(searchQuery.toLowerCase())
+    option?.label?.toString().toLowerCase().includes(searchQuery?.toLowerCase())
   );
 
   return (

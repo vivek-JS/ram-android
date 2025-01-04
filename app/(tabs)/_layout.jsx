@@ -26,7 +26,9 @@ const TabIcon = ({ icon, color, name, focused }) => {
 };
 
 const TabLayout = () => {
-  const { loading, isLogged } = useGlobalContext();
+  const { loading, isLogged, user } = useGlobalContext();
+  const jobTitle = user?.response?.data?.jobTitle;
+  const isPrimary = jobTitle === "PRIMARY";
 
   if (!loading && !isLogged) return <Redirect href="/sign-in" />;
 
@@ -48,13 +50,13 @@ const TabLayout = () => {
         <Tabs.Screen
           name="home"
           options={{
-            title: "Home",
+            title: isPrimary ? "Inward" : "Home",
             headerShown: false,
             tabBarIcon: ({ color, focused }) => (
               <TabIcon
                 icon={icons.home}
                 color={color}
-                name="Home"
+                name={isPrimary ? "Inward" : "Home"}
                 focused={focused}
               />
             ),
@@ -63,13 +65,13 @@ const TabLayout = () => {
         <Tabs.Screen
           name="dispatched"
           options={{
-            title: "Dispatched",
+            title: isPrimary ? "Outward" : "Dispatched",
             headerShown: false,
             tabBarIcon: ({ color, focused }) => (
               <TabIcon
                 icon={icons.bookmark}
                 color={color}
-                name="Dispatched"
+                name={isPrimary ? "Outward" : "Dispatched"}
                 focused={focused}
               />
             ),

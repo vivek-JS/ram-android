@@ -236,3 +236,61 @@ export const getFarmer = async (mobile, setDarmerData) => {
     // setSubmitting(false);
   }
 };
+export const getBatches = async (setFunction) => {
+  try {
+    const response = await axiosInstance.get("/batch/all");
+
+    if (response.data) {
+      setFunction(
+        response.data.data.data.map((batch) => {
+          return { label: batch.batchNumber, value: batch._id };
+        })
+      );
+    }
+  } catch (error) {
+    Alert.alert(
+      "Error",
+      error.response?.data?.message || "Failed to fetch batches"
+    );
+  }
+};
+export const gettray = async (setFunction) => {
+  try {
+    const response = await axiosInstance.get("/tray/all");
+    console.log(response?.data);
+
+    if (response.data) {
+      console.log(response?.data);
+      setFunction(
+        response.data.data.data.map((batch) => {
+          return { label: batch.cavity, value: batch._id };
+        })
+      );
+    }
+  } catch (error) {
+    Alert.alert(
+      "Error",
+      error.response?.data?.message || "Failed to fetch batches"
+    );
+  }
+};
+export const getPolly = async (setFunction) => {
+  try {
+    const response = await axiosInstance.get("/pollyhouse/all");
+    console.log(response?.data);
+
+    if (response.data) {
+      console.log(response?.data);
+      setFunction(
+        response.data.data.data.map((batch) => {
+          return { label: batch.name, value: batch._id };
+        })
+      );
+    }
+  } catch (error) {
+    Alert.alert(
+      "Error",
+      error.response?.data?.message || "Failed to fetch batches"
+    );
+  }
+};
