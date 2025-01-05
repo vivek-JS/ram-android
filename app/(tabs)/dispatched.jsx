@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { useGlobalContext } from "../../context/GlobalProvider";
 import { updateUser } from "./profile";
 import DispatchList from "../../components/DispatchList";
+import BatchCards from "../../components/PrimaryList";
 
 const Dispacthed = () => {
   const router = useRouter();
@@ -23,7 +24,6 @@ const Dispacthed = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const { user, setUser } = useGlobalContext();
-  console.log("user", user);
   const isOnboarded = user?.response?.data?.isOnboarded;
   const id = user?.response?.data?._id;
 
@@ -35,7 +35,11 @@ const Dispacthed = () => {
 
   const handleAddPress = () => {
     setShowForm(true);
-    router.push("/add-place");
+    if (jobTitle === "PRIMARY") {
+      router.push("/add-primary-dispatch");
+    } else {
+      router.push("/add-place");
+    }
   };
 
   const handleSubmit = async () => {
@@ -53,8 +57,6 @@ const Dispacthed = () => {
           password: newPassword, // Merge updated fields
           isOnboarded: true,
         }));
-
-        console.log("Profile updated:", updatedData);
         setIsModalVisible(false); // Exit edit mode upon successful save
       }
       setIsModalVisible(false); // Close the modal
@@ -62,11 +64,19 @@ const Dispacthed = () => {
       Alert.alert("Error", "Passwords do not match. Please try again.");
     }
   };
-
+  const renderMainContent = () => {
+    switch (jobTitle) {
+      case "PRIMARY":
+        return <BatchCards outward={true} />;
+      case "Operator":
+      default:
+        return <DispatchList />;
+    }
+  };
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Main Content */}
-      <DispatchList />
+      {renderMainContent()}
       <TouchableOpacity
         onPress={handleAddPress}
         className="absolute bottom-6 right-6 bg-blue-500 w-14 h-14 rounded-full items-center justify-center shadow-lg"

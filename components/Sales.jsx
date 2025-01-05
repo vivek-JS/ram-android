@@ -22,7 +22,6 @@ const Sales = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const { user, setUser } = useGlobalContext();
-  console.log("user", user);
   const isOnboarded = user?.response?.data?.isOnboarded;
   const id = user?.response?.data?._id;
 

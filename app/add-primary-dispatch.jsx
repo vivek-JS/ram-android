@@ -191,7 +191,7 @@ const AddPrimaryPlantationForm = () => {
           <TouchableOpacity onPress={() => router.back()} className="p-2">
             <AntDesign name="close" size={24} color="black" />
           </TouchableOpacity>
-          <Text className="text-xl font-bold ml-4">Add Primary Plantation</Text>
+          <Text className="text-xl font-bold ml-4">Add Primary Dispatch</Text>
         </View>
 
         <ScrollView className="flex-1 p-4">

@@ -23,6 +23,7 @@ import {
   getDistrict,
   getFarmer,
   getPlants,
+  getSales,
   getSlots,
   getStates,
   getSubType,
@@ -48,6 +49,8 @@ const AddPlaceForm = () => {
   const [showTalukaPicker, setShowTalukaPicker] = useState(false);
   const [showPlantPicker, setShowPlantPicker] = useState(false);
   const [showSubPicker, setShowSubPicker] = useState(false);
+  const [showSlaesPicker, setShowSlaesPicker] = useState(false);
+
   const [showSlotPicker, setShowSlotPicker] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
   const [showDistrictPicker, setShowDistrictPicker] = useState(false);
@@ -62,9 +65,10 @@ const AddPlaceForm = () => {
   const [farmerData, setFarmerData] = useState({});
   const [loading, setLoading] = useState(false);
   const [isInstantOrder, setIsInstantOrder] = useState(
-    jobTitle === "OFFICE_STAFF" ? true : false
+    jobTitle === "OFFICE_STAFF" || jobTitle === "OFFICE_ADMIN" ? true : false
   );
-
+  const [sales, setSales] = useState([]);
+  console.log(sales);
   const params = useLocalSearchParams();
   const mode = params.mode; // 'edit' or 'create'
   const itemData = params.data ? JSON.parse(params.data) : null; // Parse the stringified data
@@ -97,11 +101,11 @@ const AddPlaceForm = () => {
     talukaName: defaultTaluka
       ? taluka.find((taluka) => taluka?.value == defaultTaluka)?.label
       : "",
+    sales: null,
   });
   const [rate, setRate] = useState(null);
   const [available, setAvailable] = useState(null);
-  console.log(rate);
-  console.log(available);
+
   useEffect(() => {
     if (!farmerData && !farmerData?.name) {
       setFormData({
@@ -135,6 +139,7 @@ const AddPlaceForm = () => {
         district: defaultDistrict || "",
         taluka: defaultTaluka || "",
       });
+      setFarmerData({});
     }
   }, [formData?.mobileNumber.length]);
   useEffect(() => {
@@ -143,6 +148,7 @@ const AddPlaceForm = () => {
     // getDistrict(setDistricts);
     getStates(setStates, setLoading);
     getPlants(setPlants, setLoading);
+    getSales(setSales, setLoading);
   }, []);
   useEffect(() => {
     getSubType(setSubTypes, formData?.plant, setLoading);
@@ -170,7 +176,6 @@ const AddPlaceForm = () => {
 
   const handleSubmit = async () => {
     // Show confirmation alert before submission
-    console.log(formData);
     Alert.alert(
       "Confirm Order",
       `Are you sure you want to add an order for **${formData.name}**?`,
@@ -205,7 +210,7 @@ const AddPlaceForm = () => {
                 numberOfPlants: formData.noOfPlants,
                 rate: formData.rate,
                 paymentStatus: "not paid",
-                salesPerson: _id,
+                salesPerson: formData?.sales || _id,
                 orderStatus: isInstantOrder ? "DISPATCHED" : "PENDING",
                 plantName: formData.plant,
                 plantSubtype: formData.subtype,
@@ -251,7 +256,7 @@ const AddPlaceForm = () => {
     }
     setShowDatePicker(false);
   };
-
+  console.log(rate);
   // Function to stop voice recognition
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -270,42 +275,71 @@ const AddPlaceForm = () => {
 
         <ScrollView className="flex-1 p-4">
           <View className="space-y-4">
-            {jobTitle === "OFFICE_STAFF" && (
-              <View className="flex-row items-center justify-between p-4 bg-gray-50">
-                <View className="flex-row items-center bg-gray-200 rounded-lg p-1">
-                  <TouchableOpacity
-                    onPress={() => setIsInstantOrder(false)}
-                    className={`px-4 py-2 rounded-md ${
-                      !isInstantOrder ? "bg-white shadow" : ""
-                    }`}
-                  >
-                    <Text
-                      className={`${
-                        !isInstantOrder
-                          ? "text-blue-500 font-medium"
-                          : "text-gray-600"
+            {jobTitle === "OFFICE_STAFF" ||
+              (jobTitle === "OFFICE_ADMIN" && (
+                <View className="flex-row items-center justify-between p-4 bg-gray-50">
+                  <View className="flex-row items-center bg-gray-200 rounded-lg p-1">
+                    <TouchableOpacity
+                      onPress={() => setIsInstantOrder(false)}
+                      className={`px-4 py-2 rounded-md ${
+                        !isInstantOrder ? "bg-white shadow" : ""
                       }`}
                     >
-                      Normal Order
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setIsInstantOrder(true)}
-                    className={`px-4 py-2 rounded-md ${
-                      isInstantOrder ? "bg-white shadow" : ""
-                    }`}
-                  >
-                    <Text
-                      className={`${
-                        isInstantOrder
-                          ? "text-blue-500 font-medium"
-                          : "text-gray-600"
+                      <Text
+                        className={`${
+                          !isInstantOrder
+                            ? "text-blue-500 font-medium"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        Normal Order
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setIsInstantOrder(true)}
+                      className={`px-4 py-2 rounded-md ${
+                        isInstantOrder ? "bg-white shadow" : ""
                       }`}
                     >
-                      Instant Order
-                    </Text>
-                  </TouchableOpacity>
+                      <Text
+                        className={`${
+                          isInstantOrder
+                            ? "text-blue-500 font-medium"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        Instant Order
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
+              ))}
+            {jobTitle === "OFFICE_ADMIN" && (
+              <View>
+                <Text className="text-gray-700 mb-2">Order For</Text>
+                <TouchableOpacity
+                  onPress={() => setShowSlaesPicker(true)}
+                  className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                >
+                  <Text>
+                    {sales.find((opt) => opt.value === formData.sales)?.label ||
+                      "Select Sales Person"}
+                  </Text>
+                  <AntDesign name="down" size={16} color="gray" />
+                </TouchableOpacity>
+                <SearchablePicker
+                  isVisible={showSlaesPicker}
+                  onClose={() => setShowSlaesPicker(false)}
+                  onSelect={(value, label, item) => {
+                    setFormData({
+                      ...formData,
+                      sales: value,
+                    });
+                  }}
+                  options={sales}
+                  selectedValue={formData.sales}
+                  title="Select Subtype"
+                />
               </View>
             )}
             <View>
@@ -352,6 +386,7 @@ const AddPlaceForm = () => {
                   onChangeText={(text) =>
                     setFormData({ ...formData, name: text })
                   }
+                  editable={farmerData?.name ? false : true}
                 />
               </View>
               <View>
@@ -359,6 +394,7 @@ const AddPlaceForm = () => {
                 <TouchableOpacity
                   onPress={() => setShowStatePicker(true)}
                   className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                  disabled={farmerData?.name}
                 >
                   <Text>
                     {states.find((opt) => opt.value === formData.state)
@@ -375,12 +411,14 @@ const AddPlaceForm = () => {
                   options={states}
                   selectedValue={formData.state}
                   title="Select State"
+                  disabled={farmerData?.name}
                 />
 
                 <Text className="text-gray-700 mb-2">District</Text>
                 <TouchableOpacity
                   onPress={() => setShowDistrictPicker(true)}
                   className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                  disabled={farmerData?.name}
                 >
                   <Text>
                     {districts.find((opt) => opt.value === formData.district)
@@ -407,6 +445,7 @@ const AddPlaceForm = () => {
                   <TouchableOpacity
                     onPress={() => setShowTalukaPicker(true)}
                     className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                    disabled={farmerData?.name}
                   >
                     <Text>
                       {taluka.find((opt) => opt.value === formData.taluka)
@@ -434,6 +473,7 @@ const AddPlaceForm = () => {
                   <TouchableOpacity
                     onPress={() => setShowVillagePicker(true)}
                     className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                    disabled={farmerData?.name}
                   >
                     <Text>
                       {villages.find((opt) => opt.value === formData.village)
@@ -497,8 +537,11 @@ const AddPlaceForm = () => {
                         isVisible={showSubPicker}
                         onClose={() => setShowSubPicker(false)}
                         onSelect={(value, label, item) => {
-                          console.log(label);
-                          setFormData({ ...formData, subtype: value });
+                          setFormData({
+                            ...formData,
+                            subtype: value,
+                            rate: item?.rate,
+                          });
                           setRate(item?.rate);
                         }}
                         options={subTypes}
@@ -543,7 +586,7 @@ const AddPlaceForm = () => {
                 className="border border-gray-200 rounded-lg p-3 bg-white"
                 placeholder="Enter no of plants"
                 keyboardType="numeric"
-                value={formData.noOfPlants.toString()}
+                value={formData.noOfPlants?.toString()}
                 onChangeText={(text) => {
                   if (text) {
                     setFormData({ ...formData, noOfPlants: parseInt(text) });
@@ -560,13 +603,14 @@ const AddPlaceForm = () => {
                 className="border border-gray-200 rounded-lg p-3 bg-white"
                 placeholder="Enter rate"
                 keyboardType="decimal-pad"
-                value={formData.rate.toString()}
+                value={formData?.rate?.toString()}
                 onChangeText={(text) => {
                   const decimalRegex = /^\d*\.?\d*$/;
                   if (text === "" || decimalRegex.test(text)) {
                     setFormData({ ...formData, rate: text === "" ? "" : text });
                   }
                 }}
+                editable={false}
               />
             </View>
           </View>

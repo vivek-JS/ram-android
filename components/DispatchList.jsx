@@ -25,6 +25,8 @@ import { Picker } from "@react-native-picker/picker"; // Import from @react-nati
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import * as ImagePicker from "expo-image-picker";
 import { SharingButtons } from "./Recipt";
+import BlinkingStatus from "./BlinkStatus";
+import { getSales } from "./Helpers/districts";
 
 export const getTotalPaidAmount = (payments) => {
   if (!Array.isArray(payments)) return 0;
@@ -37,7 +39,7 @@ export const getTotalPaidAmount = (payments) => {
     0
   );
 };
-const PlaceCard = ({ item, index, getOrders }) => {
+const PlaceCard = ({ item, index, getOrders, jobTitle }) => {
   const {
     createdAt,
     numberOfPlants,
@@ -53,15 +55,12 @@ const PlaceCard = ({ item, index, getOrders }) => {
     _id,
     farmReadyDate: farmReadyDateApi,
   } = item || {};
-  console.log(item);
-  console.log("farmReadyDateApi", farmReadyDateApi);
 
   const { name, district, taluka, village, mobileNumber } = farmer || {};
   const [isCollapsed, setIsCollapsed] = useState(true);
   const handleCollapseToggle = () => setIsCollapsed(!isCollapsed);
   const [showFarmReadyDatePicker, setShowFarmReadyDatePicker] = useState(false);
   const [farmReadyDate, setFarmReadyDate] = useState(farmReadyDateApi || null);
-  console.log("farmReadyDate", farmReadyDate);
   useEffect(() => {
     setFarmReadyDate(farmReadyDateApi);
   }, [farmReadyDateApi]);
@@ -81,7 +80,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
     ACCEPTED: "rgb(21 128 61)",
     PENDING: "#FCD34D",
     REJECTED: "#F87171",
-    PROCESSING: "#D1D5DB",
+    DISPATCH_PROCESS: "#D1D5DB",
   };
   const statusColor = statusColors[orderStatus] || "#9CA3AF";
   const openAddPaymentModal = () => {
@@ -184,7 +183,6 @@ const PlaceCard = ({ item, index, getOrders }) => {
       id: _id,
       farmReadyDate: farmReadyDate,
     });
-    console.log("response", response);
     getOrders();
     // const instance = NetworkManager(API.ORDER.UPDATE_ORDER);
     // const emps = await instance.request({
@@ -236,20 +234,10 @@ const PlaceCard = ({ item, index, getOrders }) => {
             }}
           >
             {/* Order Status */}
-            <View
-              style={{
-                backgroundColor: statusColor,
-                paddingVertical: 6,
-                paddingHorizontal: 12,
-                borderRadius: 8,
-                alignSelf: "center",
-              }}
-            >
-              <Text style={{ fontSize: 12, fontWeight: "700", color: "#FFF" }}>
-                {orderStatus}
-              </Text>
-            </View>
-
+            <BlinkingStatus
+              orderStatus={orderStatus}
+              statusColors={statusColors[orderStatus] || "#9CA3AF"}
+            />
             {/* Sharing Buttons */}
             <SharingButtons
               orderData={{
@@ -346,18 +334,24 @@ const PlaceCard = ({ item, index, getOrders }) => {
             </TouchableOpacity>
           )}
         </View>
-        <Text style={{ fontSize: 14, color: "#111827", marginVertical: 6 }}>
-          Booking Dateddd:{" "}
-          <Text style={{ fontWeight: "600" }}>
-            {moment(createdAt).format("DD-MMM-YYYY")}
-          </Text>
-        </Text>
-        <Text style={{ fontSize: 14, color: "#111827", marginVertical: 6 }}>
-          Delivery Dateddd:{" "}
-          <Text style={{ fontWeight: "600" }}>
-            {`${start} - ${end} ${monthYear}`}{" "}
-          </Text>
-        </Text>
+        {jobTitle === "OFFICE_STAFF" ||
+          (jobTitle === "OFFICE_ADMIN" && (
+            <Text style={{ fontSize: 14, color: "#111827", marginVertical: 6 }}>
+              Booking Date:{" "}
+              <Text style={{ fontWeight: "600" }}>
+                {moment(createdAt).format("DD-MMM-YYYY")}
+              </Text>
+            </Text>
+          ))}
+        {jobTitle === "OFFICE_STAFF" ||
+          (jobTitle === "OFFICE_ADMIN" && (
+            <Text style={{ fontSize: 14, color: "#111827", marginVertical: 6 }}>
+              Delivery Date:{" "}
+              <Text style={{ fontWeight: "600" }}>
+                {`${start} - ${end} ${monthYear}`}{" "}
+              </Text>
+            </Text>
+          ))}
         <View
           style={{
             flexDirection: "row",
@@ -490,49 +484,55 @@ const PlaceCard = ({ item, index, getOrders }) => {
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={() => setShowFarmReadyDatePicker(true)}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginVertical: 8,
-          }}
-        >
-          <Text style={{ fontSize: 14, color: "#111827", marginRight: 8 }}>
-            Farm Ready Date:{" "}
-            <Text style={{ fontWeight: "600" }}>
-              {farmReadyDate
-                ? moment(farmReadyDate).format("DD-MMM-YYYY")
-                : "Not set"}
-            </Text>
-          </Text>
-          <Feather name="calendar" size={16} color="#059669" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            // Add your farm ready API call here
-            pacthOrders({ orderStatus: "FARM_READY", id: _id });
-          }}
-          style={{
-            backgroundColor: farmReadyDate ? "#059669" : "#D1D5DB",
-            paddingVertical: 8,
-            paddingHorizontal: 16,
-            borderRadius: 8,
-            alignItems: "center",
-            opacity: farmReadyDate ? 1 : 0.5,
-          }}
-          disabled={!farmReadyDate}
-        >
-          <Text
-            style={{
-              color: "#ffffff",
-              fontSize: 14,
-              fontWeight: "600",
-            }}
-          >
-            Farm Ready
-          </Text>
-        </TouchableOpacity>
+        {jobTitle === "OFFICE_STAFF" ||
+          (jobTitle === "OFFICE_ADMIN" && (
+            <TouchableOpacity
+              onPress={() => setShowFarmReadyDatePicker(true)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginVertical: 8,
+              }}
+            >
+              <Text style={{ fontSize: 14, color: "#111827", marginRight: 8 }}>
+                Farm Ready Date:{" "}
+                <Text style={{ fontWeight: "600" }}>
+                  {farmReadyDate
+                    ? moment(farmReadyDate).format("DD-MMM-YYYY")
+                    : "Not set"}
+                </Text>
+              </Text>
+              <Feather name="calendar" size={16} color="#059669" />
+            </TouchableOpacity>
+          ))}
+        {jobTitle === "OFFICE_STAFF" ||
+          (jobTitle === "OFFICE_ADMIN" && (
+            <TouchableOpacity
+              onPress={() => {
+                // Add your farm ready API call here
+                pacthOrders({ orderStatus: "FARM_READY", id: _id });
+              }}
+              style={{
+                backgroundColor: farmReadyDate ? "#059669" : "#D1D5DB",
+                paddingVertical: 8,
+                paddingHorizontal: 16,
+                borderRadius: 8,
+                alignItems: "center",
+                opacity: farmReadyDate ? 1 : 0.5,
+              }}
+              disabled={!farmReadyDate}
+            >
+              <Text
+                style={{
+                  color: "#ffffff",
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
+                Farm Ready
+              </Text>
+            </TouchableOpacity>
+          ))}
         {showFarmReadyDatePicker && (
           <DateTimePicker
             value={farmReadyDate || new Date()}
@@ -599,7 +599,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
               )}
 
               {/* Add Payment Button */}
-              {/* <TouchableOpacity
+              <TouchableOpacity
                 style={{
                   marginTop: 16,
                   backgroundColor: "#10B981",
@@ -614,7 +614,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
                 >
                   Add Payment
                 </Text>
-              </TouchableOpacity> */}
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -880,6 +880,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
 const DispatchList = () => {
   const { user } = useGlobalContext();
   const sales_id = user?.response?.data?._id;
+  const jobTitle = user?.response?.data?.jobTitle;
   const [orderList, setOrderList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -895,6 +896,7 @@ const DispatchList = () => {
   const [selectedVillages, setSelectedVillages] = useState([]);
   const [selectedSubtypes, setSelectedSubtypes] = useState([]);
   const [selectedTalukas, setSelectedTalukas] = useState([]);
+
   // Get unique values from the order list
 
   const [uniquePlantTypes, setUniquePlantTypes] = useState([]);
@@ -1016,16 +1018,16 @@ const DispatchList = () => {
       setLoading(true);
       const response = await axiosInstance.get("/order/getOrders", {
         params: {
-          salesPerson: sales_id,
+          salesPerson:
+            jobTitle === "OFFICE_STAFF" || jobTitle === "OFFICE_ADMIN"
+              ? ""
+              : sales_id,
           search: debouncedSearchQuery,
-          startDate: moment(startDate).format("DD-MM-YYYY"),
-          endDate: moment(endDate).format("DD-MM-YYYY"),
           dispatched: true,
-          status: "FARM_READY",
+          status: "DISPATCH_PROCESS,DISPATCHED",
         },
       });
       if (response.data) {
-        console.log("orders", response.data);
         setOrderList(
           Array.isArray(response.data?.data) ? response.data.data : []
         );
@@ -1038,6 +1040,7 @@ const DispatchList = () => {
       setLoading(false);
     }
   };
+
   const handleDateChange = (event, selectedDate, isStartDate) => {
     if (event.type === "set") {
       if (isStartDate) {
@@ -1256,7 +1259,12 @@ const DispatchList = () => {
       <FlatList
         data={orderList}
         renderItem={({ item, index }) => (
-          <PlaceCard item={item} index={index} getOrders={getOrders} />
+          <PlaceCard
+            item={item}
+            index={index}
+            getOrders={getOrders}
+            jobTitle={jobTitle}
+          />
         )}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

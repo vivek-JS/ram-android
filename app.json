@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "sora",
-    "slug": "sora",
+    "name": "ram_biotech",
+    "slug": "ram_biotech",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,8 +11,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "scheme": "sora",
-    "assetBundlePatterns": ["**/*"],
+    "scheme": "ram_biotech",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -21,8 +23,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["android.permission.RECORD_AUDIO"],
-      "package": "com.jsm.sora"
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.jsm.ram_biotech"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,6 +41,14 @@
           "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to access speech recognition"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "9b5e5159-b6f2-4a5e-9415-45ee0748ee58"
+      }
+    }
   }
 }

@@ -10,7 +10,6 @@ const FilterComponent = ({ batches, onApplyFilters }) => {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [showBatchPicker, setShowBatchPicker] = useState(false);
-  console.log(batches);
   const [filters, setFilters] = useState({
     batchId: "",
     startDate: null,

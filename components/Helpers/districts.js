@@ -149,10 +149,13 @@ export const getSubType = async (seFunction, plantId) => {
     if (response.data) {
       //    Alert.alert("Success", "Order added successfully");
       // router.back();
-      console.log(response?.data);
       seFunction(
         response?.data?.subtypes.map((district) => {
-          return { label: district?.subtypeName, value: district?.subtypeId };
+          return {
+            label: district?.subtypeName,
+            value: district?.subtypeId,
+            rate: district?.rate[0],
+          };
         })
       );
     }
@@ -172,14 +175,11 @@ export const getSlots = async (seFunction, plantId, subtypeId) => {
     const response = await axiosInstance.get("/slots/getslots", {
       params,
     });
-    console.log(response);
-    console.log("kanhaCCCC", response?.data?.slots[0]?.slots);
 
     // Handle successful login
     if (response) {
       //    Alert.alert("Success", "Order added successfully");
       // router.back();
-      console.log("kanha", response.data);
       const data = response?.data?.slots[0]?.slots.filter(
         (slot) => slot?.status
       );
@@ -257,10 +257,8 @@ export const getBatches = async (setFunction) => {
 export const gettray = async (setFunction) => {
   try {
     const response = await axiosInstance.get("/tray/all");
-    console.log(response?.data);
 
     if (response.data) {
-      console.log(response?.data);
       setFunction(
         response.data.data.data.map((batch) => {
           return { label: batch.cavity, value: batch._id };
@@ -277,12 +275,32 @@ export const gettray = async (setFunction) => {
 export const getPolly = async (setFunction) => {
   try {
     const response = await axiosInstance.get("/pollyhouse/all");
-    console.log(response?.data);
 
     if (response.data) {
-      console.log(response?.data);
       setFunction(
         response.data.data.data.map((batch) => {
+          return { label: batch.name, value: batch._id };
+        })
+      );
+    }
+  } catch (error) {
+    Alert.alert(
+      "Error",
+      error.response?.data?.message || "Failed to fetch batches"
+    );
+  }
+};
+export const getSales = async (setFunction) => {
+  try {
+    const response = await axiosInstance.get("/employee/getEmployees", {
+      params: {
+        jobTitle: "SALES",
+      },
+    });
+    if (response.data) {
+      console.log(response.data);
+      setFunction(
+        response.data.data.map((batch) => {
           return { label: batch.name, value: batch._id };
         })
       );

@@ -52,7 +52,6 @@ const Profile = () => {
     defaultDistrict,
     defaultState,
   } = user?.response?.data || {};
-  console.log("user", defaultTaluka);
   const [isEditable, setIsEditable] = useState(false); // Toggle edit mode
   const [showStatePicker, setShowStatePicker] = useState(false);
   const [showDistrictPicker, setShowDistrictPicker] = useState(false);
@@ -73,13 +72,9 @@ const Profile = () => {
     type: type || "",
     phoneNumber: phoneNumber || "",
   });
-  console.log(formData);
   useEffect(() => {
-    console.log("formData");
-
     getStates(setStates);
   }, []);
-  console.log("states", states);
 
   useEffect(() => {
     getDistrict(setDistricts, formData?.defaultState);

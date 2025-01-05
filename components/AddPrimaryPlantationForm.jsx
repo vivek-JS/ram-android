@@ -19,13 +19,11 @@ import { getBatches } from "./Helpers/districts";
 
 const AddPrimaryPlantationForm = () => {
   const router = useRouter();
-  console.log("assss");
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showBatchPicker, setShowBatchPicker] = useState(false);
   const [showPollyPicker, setShowPollyPicker] = useState(false);
   useEffect(() => {
-    console.log("assd ddd");
     getBatches();
   }, []);
   // Sample batch numbers - replace with actual data

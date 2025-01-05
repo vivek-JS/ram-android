@@ -21,7 +21,7 @@ import FilterComponent from "./FilterComponent";
 import { getBatches } from "./Helpers/districts";
 import BatchStatsSummary from "./BatchSummary";
 
-const BatchCards = () => {
+const BatchCards = ({ outward }) => {
   const [batchData, setBatchData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -204,7 +204,9 @@ const BatchCards = () => {
             <View className="flex-row space-x-4">
               <View className="flex-row items-center space-x-1">
                 <BarChart2 size={16} color="#15803d" />
-                <Text className="text-green-900">{data.totalBottles} Out</Text>
+                <Text className="text-green-900">
+                  {data.totalBottles - data?.primaryInwardBottles} Available
+                </Text>
               </View>
               <View className="flex-row items-center space-x-1">
                 <Leaf size={16} color="#15803d" />
@@ -358,6 +360,7 @@ const BatchCards = () => {
 
   return (
     <View className="flex-1 bg-green-25">
+      <Text>{outward && "Outward Entries"}</Text>
       <View className="px-4 py-3 bg-white border-b border-green-100">
         <FilterComponent
           onApplyFilters={handleApplyFilters}
