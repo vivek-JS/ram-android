@@ -20,6 +20,8 @@ import SearchablePicker from "../components/SearchablePicker";
 import axiosInstance from "../components/api/api_instance";
 import { useGlobalContext } from "../context/GlobalProvider";
 import {
+  getCavities,
+  getDealers,
   getDistrict,
   getFarmer,
   getPlants,
@@ -35,6 +37,7 @@ import { Loader } from "../components";
 const AddPlaceForm = () => {
   const router = useRouter();
   const { user } = useGlobalContext();
+  console.log(user);
   const {
     defaultState,
     defaultDistrict,
@@ -68,10 +71,23 @@ const AddPlaceForm = () => {
     jobTitle === "OFFICE_STAFF" || jobTitle === "OFFICE_ADMIN" ? true : false
   );
   const [sales, setSales] = useState([]);
+  const [bulkOrder, setBulkOrder] = useState(false);
   console.log(sales);
   const params = useLocalSearchParams();
   const mode = params.mode; // 'edit' or 'create'
   const itemData = params.data ? JSON.parse(params.data) : null; // Parse the stringified data
+  const [cavities, setCavities] = useState([
+    {
+      label: "10 Cavity",
+      value: 10,
+    },
+    {
+      label: "8 cavity",
+      value: 8,
+    },
+  ]);
+  const [showCavityPicker, setShowCavityPicker] = useState(false);
+
   const [formData, setFormData] = useState({
     date: mode ? new Date(itemData?.createdAt) : new Date(),
     name: itemData?.farmer?.name || "",
@@ -102,10 +118,12 @@ const AddPlaceForm = () => {
       ? taluka.find((taluka) => taluka?.value == defaultTaluka)?.label
       : "",
     sales: null,
+    cavity: "",
   });
   const [rate, setRate] = useState(null);
   const [available, setAvailable] = useState(null);
-
+  const [dealers, setDealers] = useState([]);
+  console.log("sales", dealers);
   useEffect(() => {
     if (!farmerData && !farmerData?.name) {
       setFormData({
@@ -127,6 +145,7 @@ const AddPlaceForm = () => {
       taluka: farmerData?.taluka,
     });
   }, [farmerData]);
+  console.log("as", formData);
   useEffect(() => {
     if (formData?.mobileNumber?.length === 10) {
       getFarmer(formData?.mobileNumber, setFarmerData, setLoading);
@@ -149,7 +168,11 @@ const AddPlaceForm = () => {
     getStates(setStates, setLoading);
     getPlants(setPlants, setLoading);
     getSales(setSales, setLoading);
+    getDealers(setDealers, setLoading);
+    //  getCavities(setCavities, setLoading);
   }, []);
+  console.log("cavities", cavities);
+
   useEffect(() => {
     getSubType(setSubTypes, formData?.plant, setLoading);
   }, [formData?.plant]);
@@ -175,6 +198,7 @@ const AddPlaceForm = () => {
   }, [formData?.subtype]);
 
   const handleSubmit = async () => {
+    console.log("here1");
     // Show confirmation alert before submission
     Alert.alert(
       "Confirm Order",
@@ -216,6 +240,7 @@ const AddPlaceForm = () => {
                 plantSubtype: formData.subtype,
                 bookingSlot: formData.selectedSlot,
                 orderPaymentStatus: "PENDING",
+                cavity: formData?.cavity,
               };
 
               const response = await axiosInstance.post(
@@ -230,6 +255,8 @@ const AddPlaceForm = () => {
 
               if (response.data) {
                 Alert.alert("Success", "Order added successfully");
+                setFarmerData({});
+
                 router.back();
               }
             } catch (error) {
@@ -247,7 +274,81 @@ const AddPlaceForm = () => {
       ]
     );
   };
+  const handleSubmitDelaer = async () => {
+    console.log("here3");
 
+    // Show confirmation alert before submission
+    Alert.alert(
+      "Confirm Order",
+      `Are you sure you want to add an order for **${formData.name}**?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          onPress: async () => {
+            try {
+              setLoading(true);
+
+              const payload = {
+                typeOfPlants: formData.typeOfPlant,
+                numberOfPlants: formData.noOfPlants,
+                rate: formData.rate,
+                paymentStatus: "not paid",
+                salesPerson: formData?.sales || _id,
+                orderStatus: isInstantOrder ? "DISPATCHED" : "PENDING",
+                plantName: formData.plant,
+                plantSubtype: formData.subtype,
+                bookingSlot: formData.selectedSlot,
+                orderPaymentStatus: "PENDING",
+                dealerOrder: true,
+                dealer: formData?.sales || _id,
+                salesPerson: _id,
+              };
+
+              const response = await axiosInstance.post(
+                "/order/dealer-order",
+                payload,
+                {
+                  headers: {
+                    "Content-Type": "application/json", // Changed from multipart/form-data to application/json
+                  },
+                }
+              );
+
+              if (response.data) {
+                Alert.alert("Success", "Order added successfully");
+                setFarmerData({});
+
+                router.back();
+              }
+            } catch (error) {
+              console.log(error);
+              const errorMessage =
+                error.response?.data?.message ||
+                error.message ||
+                "An error occurred during sign in";
+              Alert.alert("Error", errorMessage);
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+  const findOptionByLabel = (options, label) => {
+    console.log;
+    const foundOption = options.find(
+      (opt) => opt.label.toLowerCase() === label?.toLowerCase()
+    );
+    if (!foundOption && label) {
+      return { value: label, label: label, disabled: true };
+    }
+    return foundOption;
+  };
   const handleDateChange = (event, date) => {
     if (event.type === "set") {
       setFormData({ ...formData, date: date });
@@ -256,7 +357,7 @@ const AddPlaceForm = () => {
     }
     setShowDatePicker(false);
   };
-  console.log(rate);
+  console.log(formData);
   // Function to stop voice recognition
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -275,19 +376,61 @@ const AddPlaceForm = () => {
 
         <ScrollView className="flex-1 p-4">
           <View className="space-y-4">
+            {jobTitle === "DEALER" && (
+              <View className="flex-row items-center justify-between p-4 bg-gray-50">
+                <View className="flex-row items-center bg-gray-200 rounded-lg p-1">
+                  <TouchableOpacity
+                    onPress={() => setBulkOrder(false)}
+                    className={`px-4 py-2 rounded-md ${
+                      !bulkOrder ? "bg-white shadow" : ""
+                    }`}
+                  >
+                    <Text
+                      className={`${
+                        !bulkOrder
+                          ? "text-blue-500 font-medium"
+                          : "text-gray-600"
+                      }`}
+                    >
+                      Farmer Order
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setBulkOrder(true)}
+                    className={`px-4 py-2 rounded-md ${
+                      bulkOrder ? "bg-white shadow" : ""
+                    }`}
+                  >
+                    <Text
+                      className={`${
+                        bulkOrder
+                          ? "text-blue-500 font-medium"
+                          : "text-gray-600"
+                      }`}
+                    >
+                      Dealer Order
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
             {jobTitle === "OFFICE_STAFF" ||
               (jobTitle === "OFFICE_ADMIN" && (
                 <View className="flex-row items-center justify-between p-4 bg-gray-50">
                   <View className="flex-row items-center bg-gray-200 rounded-lg p-1">
                     <TouchableOpacity
-                      onPress={() => setIsInstantOrder(false)}
+                      onPress={() => {
+                        setIsInstantOrder(false);
+
+                        setBulkOrder(false);
+                      }}
                       className={`px-4 py-2 rounded-md ${
-                        !isInstantOrder ? "bg-white shadow" : ""
+                        !isInstantOrder && !bulkOrder ? "bg-white shadow" : ""
                       }`}
                     >
                       <Text
                         className={`${
-                          !isInstantOrder
+                          !isInstantOrder && !bulkOrder
                             ? "text-blue-500 font-medium"
                             : "text-gray-600"
                         }`}
@@ -296,7 +439,11 @@ const AddPlaceForm = () => {
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => setIsInstantOrder(true)}
+                      onPress={() => {
+                        setBulkOrder(false);
+
+                        setIsInstantOrder(true);
+                      }}
                       className={`px-4 py-2 rounded-md ${
                         isInstantOrder ? "bg-white shadow" : ""
                       }`}
@@ -311,10 +458,29 @@ const AddPlaceForm = () => {
                         Instant Order
                       </Text>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setIsInstantOrder(false);
+                        setBulkOrder(true);
+                      }}
+                      className={`px-4 py-2 rounded-md ${
+                        bulkOrder ? "bg-white shadow" : ""
+                      }`}
+                    >
+                      <Text
+                        className={`${
+                          bulkOrder
+                            ? "text-blue-500 font-medium"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        Bulk Order
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               ))}
-            {jobTitle === "OFFICE_ADMIN" && (
+            {jobTitle === "OFFICE_ADMIN" && !isInstantOrder && !bulkOrder && (
               <View>
                 <Text className="text-gray-700 mb-2">Order For</Text>
                 <TouchableOpacity
@@ -342,6 +508,34 @@ const AddPlaceForm = () => {
                 />
               </View>
             )}
+            {jobTitle === "OFFICE_ADMIN" && bulkOrder && (
+              <View>
+                <Text className="text-gray-700 mb-2">Order For</Text>
+                <TouchableOpacity
+                  onPress={() => setShowSlaesPicker(true)}
+                  className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                >
+                  <Text>
+                    {dealers.find((opt) => opt.value === formData.sales)
+                      ?.label || "Select Dealer Person"}
+                  </Text>
+                  <AntDesign name="down" size={16} color="gray" />
+                </TouchableOpacity>
+                <SearchablePicker
+                  isVisible={showSlaesPicker}
+                  onClose={() => setShowSlaesPicker(false)}
+                  onSelect={(value, label, item) => {
+                    setFormData({
+                      ...formData,
+                      sales: value,
+                    });
+                  }}
+                  options={dealers}
+                  selectedValue={formData.sales}
+                  title="Select Subtype"
+                />
+              </View>
+            )}
             <View>
               <Text className="text-gray-700 mb-2">Date</Text>
               <TouchableOpacity onPress={() => setShowDatePicker(true)}>
@@ -359,223 +553,270 @@ const AddPlaceForm = () => {
               )}
             </View>
 
-            <View>
-              <Text className="text-gray-700 mb-2">Mobile Number</Text>
-              <TextInput
-                className="border border-gray-200 rounded-lg p-3 bg-white"
-                placeholder="Enter mobile number"
-                keyboardType="numeric"
-                maxLength={10} // Limit input to 10 characters
-                value={formData.mobileNumber}
-                onChangeText={(text) => {
-                  // Allow only numeric values and trim to 10 digits
-                  const sanitizedText = text
-                    .replace(/[^0-9]/g, "")
-                    .slice(0, 10);
-                  setFormData({ ...formData, mobileNumber: sanitizedText });
-                }}
-              />
-
+            {(!bulkOrder || !bulkOrder) && (
               <View>
-                <Text className="text-gray-700 mb-2">Farmer Name</Text>
+                <Text className="text-gray-700 mb-2">Mobile Number</Text>
                 <TextInput
                   className="border border-gray-200 rounded-lg p-3 bg-white"
-                  field="name"
-                  placeholder="Farmer Name"
-                  value={formData.name}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, name: text })
-                  }
-                  editable={farmerData?.name ? false : true}
-                />
-              </View>
-              <View>
-                <Text className="text-gray-700 mb-2">States</Text>
-                <TouchableOpacity
-                  onPress={() => setShowStatePicker(true)}
-                  className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
-                  disabled={farmerData?.name}
-                >
-                  <Text>
-                    {states.find((opt) => opt.value === formData.state)
-                      ?.label || "Select District"}
-                  </Text>
-                  <AntDesign name="down" size={16} color="gray" />
-                </TouchableOpacity>
-                <SearchablePicker
-                  isVisible={showStatePicker}
-                  onClose={() => setShowStatePicker(false)}
-                  onSelect={(value, label) =>
-                    setFormData({ ...formData, state: value, stateName: label })
-                  }
-                  options={states}
-                  selectedValue={formData.state}
-                  title="Select State"
-                  disabled={farmerData?.name}
+                  placeholder="Enter mobile number"
+                  keyboardType="numeric"
+                  maxLength={10} // Limit input to 10 characters
+                  value={formData.mobileNumber}
+                  onChangeText={(text) => {
+                    // Allow only numeric values and trim to 10 digits
+                    const sanitizedText = text
+                      .replace(/[^0-9]/g, "")
+                      .slice(0, 10);
+                    setFormData({ ...formData, mobileNumber: sanitizedText });
+                  }}
                 />
 
-                <Text className="text-gray-700 mb-2">District</Text>
-                <TouchableOpacity
-                  onPress={() => setShowDistrictPicker(true)}
-                  className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
-                  disabled={farmerData?.name}
-                >
-                  <Text>
-                    {districts.find((opt) => opt.value === formData.district)
-                      ?.label || "Select District"}
-                  </Text>
-                  <AntDesign name="down" size={16} color="gray" />
-                </TouchableOpacity>
-                <SearchablePicker
-                  isVisible={showDistrictPicker}
-                  onClose={() => setShowDistrictPicker(false)}
-                  onSelect={(value, label) =>
-                    setFormData({
-                      ...formData,
-                      district: value,
-                      districtName: label,
-                    })
-                  }
-                  options={districts}
-                  selectedValue={formData.district}
-                  title="Select District"
-                />
                 <View>
-                  <Text className="text-gray-700 mb-2">Taluka</Text>
+                  <Text className="text-gray-700 mb-2">Farmer Name</Text>
+                  <TextInput
+                    className="border border-gray-200 rounded-lg p-3 bg-white"
+                    field="name"
+                    placeholder="Farmer Name"
+                    value={formData.name}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, name: text })
+                    }
+                    editable={farmerData?.name ? false : true}
+                  />
+                </View>
+                <View>
+                  <Text className="text-gray-700 mb-2">States</Text>
                   <TouchableOpacity
-                    onPress={() => setShowTalukaPicker(true)}
+                    onPress={() => setShowStatePicker(true)}
                     className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
                     disabled={farmerData?.name}
                   >
                     <Text>
-                      {taluka.find((opt) => opt.value === formData.taluka)
-                        ?.label || "Select Taluka"}
+                      {farmerData?.state
+                        ? farmerData?.state
+                        : states.find((opt) => opt.value === formData.state)
+                            ?.label || "Select State"}
                     </Text>
                     <AntDesign name="down" size={16} color="gray" />
                   </TouchableOpacity>
                   <SearchablePicker
-                    isVisible={showTalukaPicker}
-                    onClose={() => setShowTalukaPicker(false)}
+                    isVisible={showStatePicker}
+                    onClose={() => setShowStatePicker(false)}
                     onSelect={(value, label) =>
                       setFormData({
                         ...formData,
-                        taluka: value,
-                        talukaName: label,
+                        state: value,
+                        stateName: label,
                       })
                     }
-                    options={taluka}
-                    selectedValue={formData.taluka}
-                    title="Select Taluka"
+                    options={states}
+                    selectedValue={formData.state}
+                    title="Select State"
+                    disabled={farmerData?.name}
                   />
-                </View>
-                <View>
-                  <Text className="text-gray-700 mb-2">Village</Text>
+
+                  <Text className="text-gray-700 mb-2">District</Text>
                   <TouchableOpacity
-                    onPress={() => setShowVillagePicker(true)}
+                    onPress={() => setShowDistrictPicker(true)}
                     className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
                     disabled={farmerData?.name}
                   >
                     <Text>
-                      {villages.find((opt) => opt.value === formData.village)
-                        ?.label || "Select Village"}
+                      {farmerData?.district
+                        ? farmerData?.district
+                        : districts.find(
+                            (opt) => opt.value === formData.district
+                          )?.label || "Select District"}
                     </Text>
                     <AntDesign name="down" size={16} color="gray" />
                   </TouchableOpacity>
                   <SearchablePicker
-                    isVisible={showVillagePicker}
-                    onClose={() => setShowVillagePicker(false)}
-                    onSelect={(value) =>
-                      setFormData({ ...formData, village: value })
+                    isVisible={showDistrictPicker}
+                    onClose={() => setShowDistrictPicker(false)}
+                    onSelect={(value, label) =>
+                      setFormData({
+                        ...formData,
+                        district: value,
+                        districtName: label,
+                      })
                     }
-                    options={villages}
-                    selectedValue={formData.village}
-                    title="Select Village"
+                    options={[
+                      ...districts,
+                      formData.district &&
+                      !findOptionByLabel(districts, formData.district)
+                        ? {
+                            value: formData.district,
+                            label: formData.district,
+                            disabled: true,
+                          }
+                        : null,
+                    ].filter(Boolean)}
+                    selectedValue={formData.district}
+                    title="Select District"
+                  />
+                  <View>
+                    <Text className="text-gray-700 mb-2">Taluka</Text>
+                    <TouchableOpacity
+                      onPress={() => setShowTalukaPicker(true)}
+                      className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                      disabled={farmerData?.name}
+                    >
+                      <Text>
+                        {farmerData?.taluka
+                          ? farmerData?.taluka
+                          : taluka.find((opt) => opt.value === formData.taluka)
+                              ?.label || "Select Taluka"}
+                      </Text>
+                      <AntDesign name="down" size={16} color="gray" />
+                    </TouchableOpacity>
+                    <SearchablePicker
+                      isVisible={showTalukaPicker}
+                      onClose={() => setShowTalukaPicker(false)}
+                      onSelect={(value, label) =>
+                        setFormData({
+                          ...formData,
+                          taluka: value,
+                          talukaName: label,
+                        })
+                      }
+                      options={taluka}
+                      selectedValue={formData.taluka}
+                      title="Select Taluka"
+                    />
+                  </View>
+                  <View>
+                    <Text className="text-gray-700 mb-2">Village</Text>
+                    <TouchableOpacity
+                      onPress={() => setShowVillagePicker(true)}
+                      className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                      disabled={farmerData?.name}
+                    >
+                      <Text>
+                        {farmerData?.village
+                          ? farmerData?.village
+                          : villages.find(
+                              (opt) => opt.value === formData.village
+                            )?.label || "Select Village"}
+                      </Text>
+                      <AntDesign name="down" size={16} color="gray" />
+                    </TouchableOpacity>
+                    <SearchablePicker
+                      isVisible={showVillagePicker}
+                      onClose={() => setShowVillagePicker(false)}
+                      onSelect={(value) =>
+                        setFormData({ ...formData, village: value })
+                      }
+                      options={villages}
+                      selectedValue={formData.village}
+                      title="Select Village"
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+            <View>
+              <View
+                key={formData?.plant}
+                className="space-y-2 border p-4 rounded-lg mb-4 mt-4"
+              >
+                <View>
+                  <Text className="text-gray-700 mb-2">Select Plant</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowPlantPicker(true)}
+                    className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                  >
+                    <Text>
+                      {plants.find((opt) => opt.value === formData.plant)
+                        ?.label || "Select Plant"}
+                    </Text>
+                    <AntDesign name="down" size={16} color="gray" />
+                  </TouchableOpacity>
+                  <SearchablePicker
+                    isVisible={showPlantPicker}
+                    onClose={() => setShowPlantPicker(false)}
+                    onSelect={(value) =>
+                      setFormData({ ...formData, plant: value })
+                    }
+                    options={plants}
+                    selectedValue={formData.plant}
+                    title="Select Plant"
                   />
                 </View>
                 <View>
-                  <View
-                    key={formData?.plant}
-                    className="space-y-2 border p-4 rounded-lg mb-4 mt-4"
+                  <Text className="text-gray-700 mb-2">Select Subtype</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowSubPicker(true)}
+                    className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
                   >
-                    <View>
-                      <Text className="text-gray-700 mb-2">Select Plant</Text>
-                      <TouchableOpacity
-                        onPress={() => setShowPlantPicker(true)}
-                        className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
-                      >
-                        <Text>
-                          {plants.find((opt) => opt.value === formData.plant)
-                            ?.label || "Select Plant"}
-                        </Text>
-                        <AntDesign name="down" size={16} color="gray" />
-                      </TouchableOpacity>
-                      <SearchablePicker
-                        isVisible={showPlantPicker}
-                        onClose={() => setShowPlantPicker(false)}
-                        onSelect={(value) =>
-                          setFormData({ ...formData, plant: value })
-                        }
-                        options={plants}
-                        selectedValue={formData.plant}
-                        title="Select Plant"
-                      />
-                    </View>
-                    <View>
-                      <Text className="text-gray-700 mb-2">Select Subtype</Text>
-                      <TouchableOpacity
-                        onPress={() => setShowSubPicker(true)}
-                        className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
-                      >
-                        <Text>
-                          {subTypes.find(
-                            (opt) => opt.value === formData.subtype
-                          )?.label || "Select Subtype"}
-                        </Text>
-                        <AntDesign name="down" size={16} color="gray" />
-                      </TouchableOpacity>
-                      <SearchablePicker
-                        isVisible={showSubPicker}
-                        onClose={() => setShowSubPicker(false)}
-                        onSelect={(value, label, item) => {
-                          setFormData({
-                            ...formData,
-                            subtype: value,
-                            rate: item?.rate,
-                          });
-                          setRate(item?.rate);
-                        }}
-                        options={subTypes}
-                        selectedValue={formData.subtype}
-                        title="Select Subtype"
-                      />
-                    </View>
+                    <Text>
+                      {subTypes.find((opt) => opt.value === formData.subtype)
+                        ?.label || "Select Subtype"}
+                    </Text>
+                    <AntDesign name="down" size={16} color="gray" />
+                  </TouchableOpacity>
+                  <SearchablePicker
+                    isVisible={showSubPicker}
+                    onClose={() => setShowSubPicker(false)}
+                    onSelect={(value, label, item) => {
+                      setFormData({
+                        ...formData,
+                        subtype: value,
+                        rate: item?.rate,
+                      });
+                      setRate(item?.rate);
+                    }}
+                    options={subTypes}
+                    selectedValue={formData.subtype}
+                    title="Select Subtype"
+                  />
+                </View>
+                <View>
+                  <Text className="text-gray-700 mb-2">Select Cavity</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowCavityPicker(true)}
+                    className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                  >
+                    <Text>
+                      {cavities.find((opt) => opt.value === formData.cavity)
+                        ?.label || "Select Cavity"}
+                    </Text>
+                    <AntDesign name="down" size={16} color="gray" />
+                  </TouchableOpacity>
+                  <SearchablePicker
+                    isVisible={showCavityPicker}
+                    onClose={() => setShowCavityPicker(false)}
+                    onSelect={(value) =>
+                      setFormData({ ...formData, cavity: value })
+                    }
+                    options={cavities}
+                    selectedValue={formData.cavity}
+                    title="Select Cavity"
+                  />
+                </View>
 
-                    <View>
-                      <Text className="text-gray-700 mb-2">Select Slot</Text>
-                      <TouchableOpacity
-                        onPress={() => setShowSlotPicker(true)}
-                        className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
-                      >
-                        <Text>
-                          {slots.find(
-                            (opt) => opt.value === formData.selectedSlot
-                          )?.label || "Select Slot"}
-                        </Text>
-                        <AntDesign name="down" size={16} color="gray" />
-                      </TouchableOpacity>
-                      <SearchablePicker
-                        isVisible={showSlotPicker}
-                        onClose={() => setShowSlotPicker(false)}
-                        onSelect={(value, label, item) => {
-                          setFormData({ ...formData, selectedSlot: value });
-                          setAvailable(item);
-                        }}
-                        options={slots}
-                        selectedValue={formData.selectedSlot}
-                        title="Select Slot"
-                      />
-                    </View>
-                  </View>
+                <View>
+                  <Text className="text-gray-700 mb-2">Select Slot</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowSlotPicker(true)}
+                    className="border border-gray-200 rounded-lg p-3 bg-white flex-row justify-between items-center"
+                  >
+                    <Text>
+                      {slots.find((opt) => opt.value === formData.selectedSlot)
+                        ?.label || "Select Slot"}
+                    </Text>
+                    <AntDesign name="down" size={16} color="gray" />
+                  </TouchableOpacity>
+                  <SearchablePicker
+                    isVisible={showSlotPicker}
+                    onClose={() => setShowSlotPicker(false)}
+                    onSelect={(value, label, item) => {
+                      setFormData({ ...formData, selectedSlot: value });
+                      setAvailable(item);
+                    }}
+                    options={slots}
+                    selectedValue={formData.selectedSlot}
+                    title="Select Slot"
+                  />
                 </View>
               </View>
             </View>
@@ -618,7 +859,12 @@ const AddPlaceForm = () => {
 
         <View className="p-4 border-t border-gray-200">
           <TouchableOpacity
-            onPress={handleSubmit}
+            onPress={
+              (jobTitle === "DEALER" || jobTitle === "OFFICE_ADMIN") &&
+              (bulkOrder || bulkOrder)
+                ? handleSubmitDelaer
+                : handleSubmit
+            }
             className="bg-blue-500 p-4 rounded-lg items-center"
           >
             <Text className="text-white font-bold text-lg">Add Order</Text>

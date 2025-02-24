@@ -46,7 +46,7 @@ const BatchStatsSummary = ({ batchData }) => {
             </Text>
           </View>
           <Text className="text-sm font-bold text-emerald-700">
-            {totalOutwardPlants.toLocaleString()}
+            {totalOutwardPlants?.toLocaleString()}
           </Text>
         </View>
 
@@ -60,7 +60,7 @@ const BatchStatsSummary = ({ batchData }) => {
             </Text>
           </View>
           <Text className="text-sm font-bold text-green-700">
-            {totalPrimaryInwardPlants.toLocaleString()}
+            {totalPrimaryInwardPlants?.toLocaleString()}
           </Text>
         </View>
 
@@ -72,7 +72,7 @@ const BatchStatsSummary = ({ batchData }) => {
             </Text>
           </View>
           <Text className="text-lg font-bold text-blue-700">
-            {totalLaborers.toLocaleString()}
+            {totalLaborers?.toLocaleString()}
           </Text>
         </View>
       </View>

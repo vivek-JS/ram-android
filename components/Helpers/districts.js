@@ -312,3 +312,47 @@ export const getSales = async (setFunction) => {
     );
   }
 };
+export const getDealers = async (setFunction) => {
+  try {
+    const response = await axiosInstance.get("/employee/getEmployees", {
+      params: {
+        jobTitle: "DEALER",
+      },
+    });
+    if (response.data) {
+      console.log(response.data);
+      setFunction(
+        response.data.data.map((batch) => {
+          return { label: batch.name, value: batch._id };
+        })
+      );
+    }
+  } catch (error) {
+    Alert.alert(
+      "Error",
+      error.response?.data?.message || "Failed to fetch batches"
+    );
+  }
+};
+export const getCavities = async (setFunction) => {
+  try {
+    const response = await axiosInstance.get("/tray/all", {
+      params: {
+        jobTitle: "DEALER",
+      },
+    });
+    if (response.data) {
+      console.log("cavtitir", response.data);
+      setFunction(
+        response.data?.data?.data?.map((batch) => {
+          return { label: batch.name, value: batch._id };
+        })
+      );
+    }
+  } catch (error) {
+    Alert.alert(
+      "Error",
+      error.response?.data?.message || "Failed to fetch batches"
+    );
+  }
+};

@@ -74,7 +74,7 @@ const Sales = () => {
       </TouchableOpacity>
 
       {/* Modal for onboarding */}
-      <Modal
+      {/* <Modal
         transparent={true}
         visible={isModalVisible}
         animationType="slide"
@@ -104,7 +104,7 @@ const Sales = () => {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+      </Modal> */}
     </SafeAreaView>
   );
 };

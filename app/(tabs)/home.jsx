@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Text,
@@ -21,12 +21,14 @@ const Home = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const { user, setUser } = useGlobalContext();
+  console.log("user", user);
   const isOnboarded = user?.response?.data?.isOnboarded;
+  console.log("isonboar", user?.response?.data?.isOnboarded);
   const id = user?.response?.data?._id;
   const jobTitle = user?.response?.data?.jobTitle;
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
+  useEffect(() => {}, [user]);
   const handleAddPress = () => {
     setShowForm(true);
     if (jobTitle === "PRIMARY") {
@@ -43,17 +45,21 @@ const Home = () => {
         id
       );
       Alert.alert("Success", "Password set successfully!");
+      console.log("updatedData", updatedData);
       if (updatedData) {
+        console.log("hello");
         setUser((prevUser) => ({
           ...prevUser,
           password: newPassword,
           isOnboarded: true,
         }));
+        isOnboarded = true;
       }
     } else {
       Alert.alert("Error", "Passwords do not match. Please try again.");
     }
   };
+  console.log(isOnboarded);
 
   const renderMainContent = () => {
     switch (jobTitle) {

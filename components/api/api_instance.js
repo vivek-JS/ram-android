@@ -18,7 +18,7 @@ const getBaseUrl = () => {
   }
 };
 const axiosInstance = axios.create({
-  baseURL: "https://final-nursery-be.onrender.com/api/v1/",
+  baseURL: "http://192.168.1.22:8000/api/v1/",
   timeout: 10000, // 10 seconds timeout
   headers: {
     "Content-Type": "application/json",

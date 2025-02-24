@@ -34,6 +34,7 @@ const AddPrimaryPlantationForm = () => {
   const [showInfo, setShowInfo] = useState(false);
   const [batchData, setBatchData] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [formType, setFormType] = useState("inward");
   const [formData, setFormData] = useState({
     date: new Date(),
     batchNo: "",
@@ -91,13 +92,15 @@ const AddPrimaryPlantationForm = () => {
     setFormData({ ...formData, quantity });
   }, [formData.cavity, formData.noOfTray, trays]);
   const handleDateChange = (event, date) => {
+    console.log(date);
     if (event.type === "set") {
       setFormData({ ...formData, date: date });
     } else {
-      setFormData({ ...formData, date: new Date() });
+      setFormData({ ...formData, date: date });
     }
     setShowDatePicker(false);
   };
+  console.log(formData);
   useEffect(() => {
     if (!formData.date || !(formData.date instanceof Date)) {
       setFormData((prev) => ({
@@ -179,6 +182,10 @@ const AddPrimaryPlantationForm = () => {
       ]
     );
   };
+  const getHeaderColor = (type) => {
+    return type === "dispatch" ? "bg-orange-100" : "bg-white";
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Loader isLoading={loading} />
@@ -187,13 +194,77 @@ const AddPrimaryPlantationForm = () => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        <View className="flex-row items-center p-4 border-b border-gray-200">
-          <TouchableOpacity onPress={() => router.back()} className="p-2">
-            <AntDesign name="close" size={24} color="black" />
-          </TouchableOpacity>
-          <Text className="text-xl font-bold ml-4">Add Primary Plantation</Text>
-        </View>
+        <View
+          className={`p-4 border-b border-gray-200 ${getHeaderColor(formType)}`}
+        >
+          <View className="flex-row items-center justify-between">
+            <TouchableOpacity onPress={() => router.back()} className="p-2">
+              <AntDesign name="close" size={24} color="black" />
+            </TouchableOpacity>
+            <Text
+              className={`text-xl font-bold ${
+                formType === "dispatch" ? "text-orange-600" : "text-black"
+              }`}
+            >
+              Add Primary {formType === "inward" ? "Plantation" : "Dispatch"}
+            </Text>
+            <View style={{ width: 32 }} />
+          </View>
 
+          <View className="flex-row justify-center space-x-8 mt-4">
+            <TouchableOpacity
+              className="flex-row items-center"
+              onPress={() => setFormType("inward")}
+            >
+              <View
+                className={`h-5 w-5 rounded-full border-2 ${
+                  formType === "inward"
+                    ? "border-blue-500 bg-blue-500"
+                    : "border-gray-400 bg-white"
+                } mr-2`}
+              />
+              <Text
+                className={
+                  formType === "inward"
+                    ? "text-blue-500 font-medium"
+                    : "text-gray-700"
+                }
+              >
+                Inward
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-row items-center"
+              onPress={() => setFormType("dispatch")}
+            >
+              <View
+                className={`h-5 w-5 rounded-full border-2 ${
+                  formType === "dispatch"
+                    ? "border-orange-500 bg-orange-500"
+                    : "border-gray-400 bg-white"
+                } mr-2`}
+              />
+              <Text
+                className={
+                  formType === "dispatch"
+                    ? "text-orange-500 font-medium"
+                    : "text-gray-700"
+                }
+              >
+                Dispatch
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {formType === "dispatch" && (
+            <View className="mt-4 p-2 bg-orange-50 rounded-lg">
+              <Text className="text-orange-600 text-sm text-center">
+                You are creating a Primary Dispatch entry
+              </Text>
+            </View>
+          )}
+        </View>
         <ScrollView className="flex-1 p-4">
           <View className="space-y-4">
             <View>
@@ -283,49 +354,66 @@ const AddPrimaryPlantationForm = () => {
                             </Text>
 
                             {/* R1 Summary */}
-                            {batch.summary.R1.totalBottles > 0 && (
+                            {batch?.summary?.R1?.totalBottles > 0 && (
                               <View className="ml-2 mt-1">
                                 <Text className="text-sm text-gray-600">
                                   R1:
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Total Bottles: {batch.summary.R1.totalBottles}
+                                  Total Bottles:{" "}
+                                  {batch?.summary?.R1.totalBottles}
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Primary Inward Bottles:{" "}
-                                  {batch.summary.R1.primaryInwardBottles}
+                                  Total Plants:{" "}
+                                  {batch?.summary?.R1.totalBottles * 10}
+                                </Text>
+                                <Text className="text-sm text-gray-500">
+                                  Primary Inward Plants:{" "}
+                                  {batch?.summary?.R1?.primaryInwardBottles *
+                                    10}
                                 </Text>
                               </View>
                             )}
 
                             {/* R2 Summary */}
-                            {batch.summary.R2.totalBottles > 0 && (
+                            {batch?.summary?.R2.totalBottles > 0 && (
                               <View className="ml-2 mt-1">
                                 <Text className="text-sm text-gray-600">
                                   R2:
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Total Bottles: {batch.summary.R2.totalBottles}
+                                  Total Bottles:{" "}
+                                  {batch?.summary?.R2.totalBottles}
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Primary Inward Bottles:{" "}
-                                  {batch.summary.R2.primaryInwardBottles}
+                                  Total Plants:{" "}
+                                  {batch?.summary?.R2.totalBottles * 10}
+                                </Text>
+                                <Text className="text-sm text-gray-500">
+                                  Primary Inward Plants:{" "}
+                                  {batch?.summary?.R2?.primaryInwardBottles *
+                                    10}
                                 </Text>
                               </View>
                             )}
 
                             {/* R3 Summary */}
-                            {batch.summary.R3.totalBottles > 0 && (
+                            {batch?.summary?.R3.totalBottles > 0 && (
                               <View className="ml-2 mt-1">
                                 <Text className="text-sm text-gray-600">
                                   R3:
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Total Bottles: {batch.summary.R3.totalBottles}
+                                  Total Bottles:{" "}
+                                  {batch?.summary.R3.totalBottles}
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Primary Inward Bottles:{" "}
-                                  {batch.summary.R3.primaryInwardBottles}
+                                  Total Plants:{" "}
+                                  {batch?.summary?.R3.totalBottles * 10}
+                                </Text>
+                                <Text className="text-sm text-gray-500">
+                                  Primary Inward Plants:{" "}
+                                  {batch?.summary?.R3?.primaryInwardBottles * 8}
                                 </Text>
                               </View>
                             )}
@@ -334,7 +422,7 @@ const AddPrimaryPlantationForm = () => {
                             <View className="mt-2 pt-2 border-t border-gray-100">
                               <Text className="text-sm font-medium text-gray-700">
                                 Total Primary Inward Bottles:{" "}
-                                {batch.summary.total.primaryInwardBottles}
+                                {batch?.summary?.total.primaryInwardBottles}
                               </Text>
                             </View>
                           </View>
@@ -412,9 +500,15 @@ const AddPrimaryPlantationForm = () => {
               <Text className="text-gray-700 mb-2">
                 Quantity (Cavity × Trays)
               </Text>
-              <View className="border border-gray-200 rounded-lg p-3 bg-gray-100">
-                <Text>{formData.quantity}</Text>
-              </View>
+              <TextInput
+                className="border border-gray-200 rounded-lg p-3 bg-white"
+                placeholder="Enter quantity"
+                keyboardType="numeric"
+                value={formData.quantity}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, quantity: text })
+                }
+              />
             </View>
             <View>
               <Text className="text-gray-700 mb-2">Pollyhouse Number</Text>
@@ -454,13 +548,16 @@ const AddPrimaryPlantationForm = () => {
             </View>
           </View>
         </ScrollView>
-
         <View className="p-4 border-t border-gray-200">
           <TouchableOpacity
             onPress={handleSubmit}
-            className="bg-blue-500 p-4 rounded-lg items-center"
+            className={`p-4 rounded-lg items-center ${
+              formType === "dispatch" ? "bg-orange-500" : "bg-blue-500"
+            }`}
           >
-            <Text className="text-white font-bold text-lg">Submit</Text>
+            <Text className="text-white font-bold text-lg">
+              Submit {formType === "inward" ? "Inward" : "Dispatch"}
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

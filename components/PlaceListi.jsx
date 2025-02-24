@@ -23,6 +23,8 @@ import { Picker } from "@react-native-picker/picker"; // Import from @react-nati
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import * as ImagePicker from "expo-image-picker";
 import { SharingButtons } from "./Recipt";
+import { getWalleetDetails } from "./Helpers/orderApicalls";
+import WalletStatsCard from "./WalletSatts";
 
 export const getTotalPaidAmount = (payments) => {
   if (!Array.isArray(payments)) return 0;
@@ -35,7 +37,8 @@ export const getTotalPaidAmount = (payments) => {
     0
   );
 };
-const PlaceCard = ({ item, index, getOrders }) => {
+const PlaceCard = ({ item, index, getOrders, delaerWallet, jobTitle }) => {
+  const { financial } = delaerWallet || {};
   const {
     createdAt,
     numberOfPlants,
@@ -65,6 +68,7 @@ const PlaceCard = ({ item, index, getOrders }) => {
     modeOfPayment: "",
     paymentStatus: "PENDING",
     receiptPhoto: [],
+    useWallet: false, // This will only be used for DEALER
   });
   const [showDatePicker, setShowDatePicker] = useState(false); // State to show date picker
   const bgColor = index % 2 === 0 ? "white" : "#F9FAFB";
@@ -94,22 +98,35 @@ const PlaceCard = ({ item, index, getOrders }) => {
   };
   const addPayment = async (formData) => {
     try {
+      let paymentData = { ...newPayment };
+
+      // If DEALER and wallet payment is selected
+      if (jobTitle === "DEALER" && newPayment.useWallet) {
+        // Validate wallet balance before proceeding
+        if (Number(newPayment.paidAmount) > (financial?.availableAmount ?? 0)) {
+          Alert.alert("Error", "Insufficient wallet balance");
+          return;
+        }
+        paymentData.isWalletPayment = true;
+      }
+
       // Send PATCH request to the server
       const response = await axiosInstance.patch(
         `/order/payment/${item?._id}`,
-        newPayment
+        paymentData
       );
 
       if (response.status === 200) {
         Alert.alert("Success", "Payment added successfully");
         getOrders();
-        return response.data; // Return response data if needed
+        closeAddPaymentModal();
+        return response.data;
       } else {
-        Alert.alert("Error", "Failed to update profile");
+        Alert.alert("Error", "Failed to add payment");
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
-      Alert.alert("Error", "An error occurred while updating the profile");
+      console.error("Error adding payment:", error);
+      Alert.alert("Error", "An error occurred while adding the payment");
     }
   };
   const openCamera = async () => {
@@ -680,39 +697,132 @@ const PlaceCard = ({ item, index, getOrders }) => {
                     </View>
                   ))}
               </View>
+              {/* Before the Save and Cancel Buttons */}
+              {/* Before the Save and Cancel Buttons */}
+              {jobTitle === "DEALER" && (
+                <View className="mb-4">
+                  <View className="flex-row items-center justify-between bg-gray-50 p-4 rounded-xl mb-2">
+                    <View className="flex-row items-center">
+                      <TouchableOpacity
+                        onPress={() =>
+                          setNewPayment((prev) => ({
+                            ...prev,
+                            useWallet: !prev.useWallet,
+                          }))
+                        }
+                        className="mr-3"
+                      >
+                        <View
+                          className={`w-5 h-5 rounded border ${
+                            newPayment.useWallet
+                              ? "bg-green-500 border-green-500"
+                              : "border-gray-300"
+                          } justify-center items-center`}
+                        >
+                          {newPayment.useWallet && (
+                            <Feather name="check" size={14} color="#fff" />
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                      <Text className="text-gray-700 font-medium">
+                        Pay from Wallet
+                      </Text>
+                    </View>
+                    <View>
+                      <Text className="text-xs text-gray-500">
+                        Wallet Balance
+                      </Text>
+                      <Text
+                        className={`text-base font-bold ${
+                          newPayment.useWallet &&
+                          Number(newPayment.paidAmount) >
+                            (financial?.availableAmount ?? 0)
+                            ? "text-red-600"
+                            : "text-gray-800"
+                        }`}
+                      >
+                        ₹{(financial?.availableAmount ?? 0)?.toLocaleString()}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Warning messages for wallet payment */}
+                  {newPayment.useWallet && (
+                    <>
+                      {Number(newPayment.paidAmount) >
+                        (financial?.availableAmount ?? 0) && (
+                        <View className="bg-red-50 p-3 rounded-lg mb-2">
+                          <Text className="text-sm text-red-600 font-medium">
+                            Insufficient wallet balance! Available: ₹
+                            {(
+                              financial?.availableAmount ?? 0
+                            )?.toLocaleString()}
+                          </Text>
+                        </View>
+                      )}
+
+                      {!newPayment.paidAmount && (
+                        <View className="bg-amber-50 p-3 rounded-lg mb-2">
+                          <Text className="text-sm text-amber-600 font-medium">
+                            Please enter payment amount
+                          </Text>
+                        </View>
+                      )}
+
+                      {Number(newPayment.paidAmount) <=
+                        (financial?.availableAmount ?? 0) &&
+                        newPayment.paidAmount && (
+                          <View className="bg-green-50 p-3 rounded-lg mb-2">
+                            <Text className="text-sm text-green-600 font-medium">
+                              Sufficient balance available
+                            </Text>
+                          </View>
+                        )}
+                    </>
+                  )}
+                </View>
+              )}
 
               {/* Save and Cancel Buttons */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
+              <View className="flex-row justify-between">
                 <TouchableOpacity
-                  style={{
-                    backgroundColor: "#10B981",
-                    paddingVertical: 12,
-                    borderRadius: 8,
-                    flex: 0.48,
-                    alignItems: "center",
-                  }}
+                  className={`py-3 rounded-lg flex-1 items-center mr-2 ${
+                    jobTitle === "DEALER" &&
+                    newPayment.useWallet &&
+                    (Number(newPayment.paidAmount) >
+                      (financial?.availableAmount ?? 0) ||
+                      !newPayment.paidAmount)
+                      ? "bg-gray-300"
+                      : "bg-green-500"
+                  }`}
                   onPress={handleSavePayment}
+                  disabled={
+                    jobTitle === "DEALER" &&
+                    newPayment.useWallet &&
+                    (Number(newPayment.paidAmount) >
+                      (financial?.availableAmount ?? 0) ||
+                      !newPayment.paidAmount)
+                  }
                 >
-                  <Text style={{ color: "#FFF", fontWeight: "700" }}>Save</Text>
+                  <Text
+                    className={`font-bold ${
+                      jobTitle === "DEALER" &&
+                      newPayment.useWallet &&
+                      (Number(newPayment.paidAmount) >
+                        (financial?.availableAmount ?? 0) ||
+                        !newPayment.paidAmount)
+                        ? "text-gray-500"
+                        : "text-white"
+                    }`}
+                  >
+                    Save
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={{
-                    backgroundColor: "#EF4444",
-                    paddingVertical: 12,
-                    borderRadius: 8,
-                    flex: 0.48,
-                    alignItems: "center",
-                  }}
+                  className="bg-red-500 py-3 rounded-lg flex-1 items-center ml-2"
                   onPress={closeAddPaymentModal}
                 >
-                  <Text style={{ color: "#FFF", fontWeight: "700" }}>
-                    Cancel
-                  </Text>
+                  <Text className="text-white font-bold">Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -725,6 +835,8 @@ const PlaceCard = ({ item, index, getOrders }) => {
 const PlacesList = () => {
   const { user } = useGlobalContext();
   const sales_id = user?.response?.data?._id;
+  const jobTitle = user?.response?.data?.jobTitle;
+  console.log(delaerWallet);
   const [orderList, setOrderList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -735,6 +847,7 @@ const PlacesList = () => {
   const [isFilterActive, setIsFilterActive] = useState(false);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [delaerWallet, setDelaerWallet] = useState({});
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
@@ -744,6 +857,12 @@ const PlacesList = () => {
       clearTimeout(handler); // Cleanup timeout on query change
     };
   }, [searchQuery]);
+  useEffect(() => {
+    if (jobTitle !== "DEALER") {
+      return;
+    }
+    getWalleetDetails(sales_id, setDelaerWallet);
+  }, [sales_id, startDate, endDate, debouncedSearchQuery]);
   useFocusEffect(
     useCallback(() => {
       getOrders();
@@ -766,6 +885,7 @@ const PlacesList = () => {
         setOrderList(
           Array.isArray(response.data?.data) ? response.data.data : []
         );
+        getWalleetDetails(sales_id, setDelaerWallet, setLoading);
       }
     } catch (error) {
       console.error(error);
@@ -876,6 +996,12 @@ const PlacesList = () => {
           onChange={(event, date) => handleDateChange(event, date, false)}
         />
       )}
+      {delaerWallet && (
+        <WalletStatsCard
+          plantsData={delaerWallet?.plantDetails}
+          financial={delaerWallet?.financial}
+        />
+      )}
     </View>
   );
   return (
@@ -884,7 +1010,13 @@ const PlacesList = () => {
       <FlatList
         data={orderList}
         renderItem={({ item, index }) => (
-          <PlaceCard item={item} index={index} getOrders={getOrders} />
+          <PlaceCard
+            item={item}
+            index={index}
+            getOrders={getOrders}
+            delaerWallet={delaerWallet}
+            jobTitle={jobTitle}
+          />
         )}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

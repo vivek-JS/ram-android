@@ -42,28 +42,6 @@ const Dispacthed = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (newPassword === confirmPassword) {
-      const updatedData = await updateUser(
-        { password: newPassword, isOnboarded: true },
-        id
-      );
-
-      Alert.alert("Success", "Password set successfully!");
-      // Update the user object to mark onboarding as complete
-      if (updatedData) {
-        setUser((prevUser) => ({
-          ...prevUser,
-          password: newPassword, // Merge updated fields
-          isOnboarded: true,
-        }));
-        setIsModalVisible(false); // Exit edit mode upon successful save
-      }
-      setIsModalVisible(false); // Close the modal
-    } else {
-      Alert.alert("Error", "Passwords do not match. Please try again.");
-    }
-  };
   const renderMainContent = () => {
     switch (jobTitle) {
       case "PRIMARY":
@@ -86,7 +64,7 @@ const Dispacthed = () => {
       </TouchableOpacity>
 
       {/* Modal for onboarding */}
-      <Modal
+      {/* <Modal
         transparent={true}
         visible={isModalVisible}
         animationType="slide"
@@ -116,50 +94,9 @@ const Dispacthed = () => {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+      </Modal> */}
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    width: "80%",
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 20,
-    alignItems: "center",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  input: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: "#007bff",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
 
 export default Dispacthed;

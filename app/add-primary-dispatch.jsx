@@ -283,49 +283,67 @@ const AddPrimaryPlantationForm = () => {
                             </Text>
 
                             {/* R1 Summary */}
-                            {batch.summary.R1.totalBottles > 0 && (
+                            {batch?.summary?.R1.totalBottles > 0 && (
                               <View className="ml-2 mt-1">
                                 <Text className="text-sm text-gray-600">
                                   R1:
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Total Bottles: {batch.summary.R1.totalBottles}
+                                  Total Bottles:{" "}
+                                  {batch?.summary?.R1.totalBottles}
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Primary Inward Bottles:{" "}
-                                  {batch.summary.R1.primaryInwardBottles}
+                                  Total Plants:{" "}
+                                  {batch?.summary?.R1.totalBottles * 10}
+                                </Text>
+                                <Text className="text-sm text-gray-500">
+                                  Primary Inward Plants:{" "}
+                                  {batch?.summary?.R1?.primaryInwardBottles *
+                                    10}
                                 </Text>
                               </View>
                             )}
 
                             {/* R2 Summary */}
-                            {batch.summary.R2.totalBottles > 0 && (
+                            {batch?.summary?.R2?.totalBottles > 0 && (
                               <View className="ml-2 mt-1">
                                 <Text className="text-sm text-gray-600">
                                   R2:
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Total Bottles: {batch.summary.R2.totalBottles}
+                                  Total Bottles:{" "}
+                                  {batch?.summary?.R2.totalBottles}
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Primary Inward Bottles:{" "}
-                                  {batch.summary.R2.primaryInwardBottles}
+                                  Total Plants:{" "}
+                                  {batch?.summary?.R2.totalBottles * 10}
+                                </Text>
+                                <Text className="text-sm text-gray-500">
+                                  Primary Inward Plants:{" "}
+                                  {batch?.summary?.R2?.primaryInwardBottles *
+                                    10}
                                 </Text>
                               </View>
                             )}
 
                             {/* R3 Summary */}
-                            {batch.summary.R3.totalBottles > 0 && (
+                            {batch?.summary?.R3.totalBottles > 0 && (
                               <View className="ml-2 mt-1">
                                 <Text className="text-sm text-gray-600">
                                   R3:
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Total Bottles: {batch.summary.R3.totalBottles}
+                                  Total Bottles:{" "}
+                                  {batch?.summary?.R3.totalBottles}
                                 </Text>
                                 <Text className="text-sm text-gray-500">
-                                  Primary Inward Bottles:{" "}
-                                  {batch.summary.R3.primaryInwardBottles}
+                                  Total Plants:{" "}
+                                  {batch?.summary?.R3.totalBottles * 8}
+                                </Text>
+                                <Text className="text-sm text-gray-500">
+                                  Primary Inward Plants:{" "}
+                                  {batch?.summary?.R3?.primaryInwardBottles *
+                                    10}
                                 </Text>
                               </View>
                             )}
@@ -334,7 +352,7 @@ const AddPrimaryPlantationForm = () => {
                             <View className="mt-2 pt-2 border-t border-gray-100">
                               <Text className="text-sm font-medium text-gray-700">
                                 Total Primary Inward Bottles:{" "}
-                                {batch.summary.total.primaryInwardBottles}
+                                {batch?.summary?.total?.primaryInwardBottles}
                               </Text>
                             </View>
                           </View>

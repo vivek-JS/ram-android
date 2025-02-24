@@ -14,19 +14,47 @@ import {
   BarChart2,
   Archive,
   ChevronDown,
+  Plus, // Add this
 } from "lucide-react-native";
 import axiosInstance from "../components/api/api_instance";
 import { useFocusEffect } from "expo-router";
 import FilterComponent from "./FilterComponent";
 import { getBatches } from "./Helpers/districts";
 import BatchStatsSummary from "./BatchSummary";
+import OutwardItem from "./OutwardItem";
+import PlantationModal from "./PlantationModal";
 
 const BatchCards = ({ outward }) => {
   const [batchData, setBatchData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [batches, setBatches] = useState([]);
+  const [selectedOutwards, setSelectedOutwards] = useState([]);
+  const [showPlantationModal, setShowPlantationModal] = useState(false);
+  const [currentBatchNumber, setCurrentBatchNumber] = useState(null);
+  const handleOutwardSelection = (outward, batchNumber) => {
+    if (selectedOutwards.length > 0) {
+      // Check if trying to select different size
+      const existingSize = selectedOutwards[0].size;
+      if (outward.size !== existingSize) {
+        Alert.alert(
+          "Size Mismatch",
+          "You can only select items of the same size"
+        );
+        return;
+      }
+    }
 
+    setSelectedOutwards((prev) => {
+      const isSelected = prev.find((item) => item._id === outward._id);
+      if (isSelected) {
+        return prev.filter((item) => item._id !== outward._id);
+      } else {
+        setCurrentBatchNumber(batchNumber);
+        return [...prev, outward];
+      }
+    });
+  };
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     getOutwards().then(() => setRefreshing(false));
@@ -40,7 +68,7 @@ const BatchCards = ({ outward }) => {
   );
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString)?.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -95,86 +123,156 @@ const BatchCards = ({ outward }) => {
       getOutwards(filters); // Apply filters
     }
   };
+  const LabOutwardAccordion = ({
+    outwardEntries,
+    summary,
+    selectedOutwards,
+    onSelectOutward,
+    batchNumber,
+    formatDate,
+  }) => {
+    const [expanded, setExpanded] = useState(false);
+
+    // New function to handle outward selection without closing accordion
+    const handleOutwardSelect = (outward) => {
+      onSelectOutward(outward, batchNumber);
+      // Don't close the accordion after selection
+    };
+
+    return (
+      <View className="mt-4">
+        <TouchableOpacity
+          onPress={() => setExpanded(!expanded)}
+          className="flex-row items-center justify-between mb-3"
+        >
+          <View className="flex-row items-center">
+            <FlaskConical size={24} color="#15803d" />
+            <Text className="text-lg font-bold text-green-900 ml-2">
+              Lab Outward Entries
+            </Text>
+          </View>
+          <View className="flex-row items-center space-x-1 bg-green-50 px-2 py-1 rounded-full">
+            <ChevronDown
+              size={16}
+              color="#15803d"
+              style={{
+                transform: [{ rotate: expanded ? "180deg" : "0deg" }],
+              }}
+            />
+            <Text className="text-xs text-green-800">
+              {expanded ? "Collapse" : "Expand"}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {(expanded || selectedOutwards?.length > 0) && (
+          <View>
+            {outwardEntries.map((outward) => (
+              <OutwardItem
+                key={outward._id}
+                outward={outward}
+                isSelected={selectedOutwards.some(
+                  (item) => item._id === outward._id
+                )}
+                onSelect={() => handleOutwardSelect(outward)}
+                formatDate={formatDate}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
 
   // Component for displaying individual outward items
-  const OutwardItem = ({ outward }) => (
-    <View className="bg-green-50 border border-green-100 rounded-xl mb-3 p-4 shadow-sm">
-      <View className="flex-row justify-between items-center mb-3">
-        <View className="flex-row items-center space-x-2">
-          <FlaskConical size={20} color="#15803d" />
-          <Text className="text-sm font-bold text-green-800">Size:</Text>
-          <Text className="text-base text-green-900 font-semibold">
-            {outward.size}
-          </Text>
-        </View>
-        <View className="flex-row items-center space-x-2">
-          <BarChart2 size={20} color="#15803d" />
-          <Text className="text-sm font-bold text-green-800">Bottles:</Text>
-          <Text className="text-base text-green-900 font-semibold">
-            {outward.bottles}
-          </Text>
-        </View>
-      </View>
-      <View className="border-t border-green-100 pt-3 mt-2 flex-col justify-start items-start">
-        <View className="flex-row items-center space-x-2">
-          <Calendar size={18} color="#15803d" />
-          <Text className="text-sm font-bold text-green-800">
-            Outward Date:
-          </Text>
-          <Text className="text-sm text-green-900">
-            {formatDate(outward.outwardDate)}
-          </Text>
-        </View>
-        <View className="flex-row items-center space-x-2">
-          <Leaf size={18} color="#15803d" />
-          <Text className="text-sm font-bold text-green-800">Plants:</Text>
-          <Text className="text-sm text-green-900">
-            {outward.plants.toLocaleString()}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
 
   // Component for displaying primary inward items
-  const PrimaryInwardItem = ({ inward }) => (
-    <View className="bg-blue-50 border border-blue-100 rounded-xl mb-3 p-4 shadow-sm">
-      <View className="flex-row justify-between items-center mb-3">
-        <View className="flex-row items-center space-x-2">
-          <Archive size={20} color="#1d4ed8" />
-          <Text className="text-sm font-bold text-blue-800">Size:</Text>
-          <Text className="text-base text-blue-900 font-semibold">
-            {inward.size}
-          </Text>
+  const PrimaryInwardItem = ({ inward, batchId }) => {
+    const calculateRemainingDays = () => {
+      const inwardDate = new Date(inward.primaryInwardDate);
+      const readyDate = new Date(inwardDate);
+      readyDate.setDate(readyDate.getDate() + batchId.primaryPlantReadyDays);
+
+      const today = new Date();
+      const remainingDays = Math.ceil(
+        (readyDate - today) / (1000 * 60 * 60 * 24)
+      );
+      return remainingDays;
+    };
+
+    const remainingDays = calculateRemainingDays();
+    const isNearDispatch = remainingDays <= 3 && remainingDays >= 0;
+    const isOverdue = remainingDays < 0;
+
+    const getStatusColor = () => {
+      if (isOverdue) return "bg-red-50 border-red-100";
+      if (isNearDispatch) return "bg-green-50 border-green-100 animate-pulse";
+      return "bg-blue-50 border-blue-100";
+    };
+
+    return (
+      <View className={`${getStatusColor()} rounded-xl mb-3 p-4 shadow-sm`}>
+        <View className="flex-row justify-between items-center mb-3">
+          <View className="flex-row items-center space-x-2">
+            <Archive size={20} color={isNearDispatch ? "#15803d" : "#1d4ed8"} />
+            <Text className="text-base font-semibold">
+              {inward.size} - {inward.totalQuantity} Plants
+            </Text>
+          </View>
+
+          <View
+            className={`px-3 py-1 rounded-full ${
+              isOverdue
+                ? "bg-red-100"
+                : isNearDispatch
+                ? "bg-green-100"
+                : "bg-blue-100"
+            }`}
+          >
+            <Text
+              className={`text-sm font-bold ${
+                isOverdue
+                  ? "text-red-800"
+                  : isNearDispatch
+                  ? "text-green-800"
+                  : "text-blue-800"
+              }`}
+            >
+              {isOverdue
+                ? `Overdue by ${Math.abs(remainingDays)} days`
+                : `${remainingDays} days remaining`}
+            </Text>
+          </View>
         </View>
-        <View className="flex-row items-center space-x-2">
-          <BarChart2 size={20} color="#1d4ed8" />
-          <Text className="text-sm font-bold text-blue-800">Bottles:</Text>
-          <Text className="text-base text-blue-900 font-semibold">
-            {inward.numberOfBottles}
-          </Text>
+
+        <View className="space-y-2">
+          <View className="flex-row justify-between">
+            <Text className="text-gray-600">Inward Date:</Text>
+            <Text>{formatDate(inward.primaryInwardDate)}</Text>
+          </View>
+
+          <View className="flex-row justify-between">
+            <Text className="text-gray-600">Expected Ready:</Text>
+            <Text>
+              {formatDate(
+                new Date(
+                  new Date(inward.primaryInwardDate).setDate(
+                    new Date(inward.primaryInwardDate).getDate() +
+                      batchId.primaryPlantReadyDays
+                  )
+                )
+              )}
+            </Text>
+          </View>
+
+          <View className="flex-row justify-between">
+            <Text className="text-gray-600">Labours:</Text>
+            <Text>{inward.laboursEngaged}</Text>
+          </View>
         </View>
       </View>
-      <View className="border-t border-blue-100 pt-3 mt-2 flex-col justify-start items-start">
-        <View className="flex-row items-center space-x-2">
-          <Calendar size={18} color="#1d4ed8" />
-          <Text className="text-sm font-bold text-blue-800">Inward Date:</Text>
-          <Text className="text-sm text-blue-900">
-            {formatDate(inward.primaryInwardDate)}
-          </Text>
-        </View>
-      </View>
-      <View className="border-t border-blue-100 pt-3 mt-2 flex-col justify-start items-start">
-        <View className="flex-row items-center space-x-2">
-          <Calendar size={18} color="#1d4ed8" />
-          <Text className="text-sm font-bold text-blue-800">Labours</Text>
-          <Text className="text-sm text-blue-900">
-            {inward?.laboursEngaged}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
+    );
+  };
 
   // Component for displaying the summary
   const SummaryCard = ({ summary }) => (
@@ -185,8 +283,9 @@ const BatchCards = ({ outward }) => {
           Size Summary
         </Text>
       </View>
+
       {Object.entries(summary).map(([size, data], index) => {
-        if (size === "total") return null; // Skip total in this view
+        if (size === "total") return null;
         return (
           <View
             key={size}
@@ -211,13 +310,34 @@ const BatchCards = ({ outward }) => {
               <View className="flex-row items-center space-x-1">
                 <Leaf size={16} color="#15803d" />
                 <Text className="text-green-900">
-                  {data.totalPlants.toLocaleString()} Plants
+                  {data?.totalPlants?.toLocaleString()} Plants
                 </Text>
               </View>
             </View>
           </View>
         );
       })}
+
+      <View className="border-t border-green-100 mt-4 pt-4 space-y-2">
+        <View className="flex-row justify-between items-center">
+          <Text className="text-green-800 font-semibold">
+            Total Primary Inward:
+          </Text>
+          <View className="bg-green-50 px-3 py-1 rounded-full">
+            <Text className="font-bold text-green-800">
+              {summary?.total?.primaryInwardBottles}
+            </Text>
+          </View>
+        </View>
+        <View className="flex-row justify-between items-center">
+          <Text className="text-green-800 font-semibold">
+            Total Outward Plants:
+          </Text>
+          <Text className="text-green-900">
+            {summary?.total?.plants?.toLocaleString()}
+          </Text>
+        </View>
+      </View>
     </View>
   );
 
@@ -263,34 +383,18 @@ const BatchCards = ({ outward }) => {
         </View>
 
         <View className="p-4">
+          <SummaryCard summary={batch?.summary} />
+
           {batch.outward.length > 0 ? (
             <>
-              {batch.outward.map((outward) => (
-                <OutwardItem key={outward._id} outward={outward} />
-              ))}
-
-              <SummaryCard summary={batch.summary} />
-
-              <View className="border-t border-green-100 mt-4 pt-4 space-y-2">
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-green-800 font-semibold">
-                    Total Primary Inward:
-                  </Text>
-                  <View className="bg-green-50 px-3 py-1 rounded-full">
-                    <Text className="font-bold text-green-800">
-                      {batch.summary.total.primaryInwardBottles}
-                    </Text>
-                  </View>
-                </View>
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-green-800 font-semibold">
-                    Total Outward Plants:
-                  </Text>
-                  <Text className="text-green-900">
-                    {batch.summary.total.plants.toLocaleString()}
-                  </Text>
-                </View>
-              </View>
+              <LabOutwardAccordion
+                outwardEntries={batch.outward}
+                summary={batch?.summary}
+                selectedOutwards={selectedOutwards}
+                onSelectOutward={handleOutwardSelection}
+                batchNumber={batch.batchId.batchNumber}
+                formatDate={formatDate}
+              />
 
               {hasPrimaryInward && (
                 <View className="mt-4">
@@ -324,7 +428,11 @@ const BatchCards = ({ outward }) => {
                     {expanded && (
                       <>
                         {batch.primaryInward.map((inward) => (
-                          <PrimaryInwardItem key={inward._id} inward={inward} />
+                          <PrimaryInwardItem
+                            key={inward._id}
+                            inward={inward}
+                            batchId={batch.batchId}
+                          />
                         ))}
                       </>
                     )}
@@ -360,6 +468,9 @@ const BatchCards = ({ outward }) => {
 
   return (
     <View className="flex-1 bg-green-25">
+      {selectedOutwards.length > 0 && (
+        <View className="h-[72px]" /> // Add padding for the selection bar
+      )}
       <Text>{outward && "Outward Entries"}</Text>
       <View className="px-4 py-3 bg-white border-b border-green-100">
         <FilterComponent
@@ -384,6 +495,37 @@ const BatchCards = ({ outward }) => {
           <BatchCard key={batch._id} batch={batch} />
         ))}
       </ScrollView>
+      <PlantationModal
+        visible={showPlantationModal}
+        onClose={() => setShowPlantationModal(false)}
+        selectedOutwards={selectedOutwards}
+        batchNumber={currentBatchNumber}
+      />
+      {selectedOutwards.length > 0 && (
+        <View className="absolute top-0 left-0 right-0 bg-green-600 p-4 flex-row justify-between items-center z-50">
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedOutwards([]);
+              setIsSelectionMode(false);
+            }}
+            className="flex-row items-center"
+          >
+            <Text className="text-white font-semibold mr-2">Cancel</Text>
+            <Text className="text-white">
+              ({selectedOutwards.length} selected)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setShowPlantationModal(true)}
+            className="bg-white px-4 py-2 rounded-full flex-row items-center"
+          >
+            <Text className="text-green-600 font-bold">
+              Proceed to Plantation
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
