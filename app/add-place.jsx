@@ -242,6 +242,8 @@ const AddPlaceForm = () => {
                 orderPaymentStatus: "PENDING",
                 cavity: formData?.cavity,
               };
+              console.log(payload);
+              console.log(formData);
 
               const response = await axiosInstance.post(
                 "/farmer/createFarmer",
@@ -339,6 +341,9 @@ const AddPlaceForm = () => {
       ]
     );
   };
+  console.log("states", states);
+  console.log("states  sdsd", formData);
+
   const findOptionByLabel = (options, label) => {
     console.log;
     const foundOption = options.find(
@@ -592,10 +597,21 @@ const AddPlaceForm = () => {
                     disabled={farmerData?.name}
                   >
                     <Text>
-                      {farmerData?.state
-                        ? farmerData?.state
-                        : states.find((opt) => opt.value === formData.state)
-                            ?.label || "Select State"}
+                      {(() => {
+                        // Get the state ID from either farmerData or formData
+                        const stateId = farmerData?.state || formData.state;
+
+                        // If we have a state ID, find the matching label from the states array
+                        if (stateId) {
+                          const stateObj = states.find(
+                            (opt) => opt.value === stateId
+                          );
+                          return stateObj?.label || "Unknown State";
+                        }
+
+                        // Default text if no state is selected
+                        return "Select State";
+                      })()}
                     </Text>
                     <AntDesign name="down" size={16} color="gray" />
                   </TouchableOpacity>
@@ -622,11 +638,22 @@ const AddPlaceForm = () => {
                     disabled={farmerData?.name}
                   >
                     <Text>
-                      {farmerData?.district
-                        ? farmerData?.district
-                        : districts.find(
-                            (opt) => opt.value === formData.district
-                          )?.label || "Select District"}
+                      {(() => {
+                        // Get the district ID from either farmerData or formData
+                        const districtId =
+                          farmerData?.district || formData.district;
+
+                        // If we have a district ID, find the matching label from the districts array
+                        if (districtId) {
+                          const districtObj = districts.find(
+                            (opt) => opt.value === districtId
+                          );
+                          return districtObj?.label || "Unknown District";
+                        }
+
+                        // Default text if no district is selected
+                        return "Select District";
+                      })()}
                     </Text>
                     <AntDesign name="down" size={16} color="gray" />
                   </TouchableOpacity>
@@ -662,10 +689,22 @@ const AddPlaceForm = () => {
                       disabled={farmerData?.name}
                     >
                       <Text>
-                        {farmerData?.taluka
-                          ? farmerData?.taluka
-                          : taluka.find((opt) => opt.value === formData.taluka)
-                              ?.label || "Select Taluka"}
+                        {(() => {
+                          // Get the taluka ID from either farmerData or formData
+                          const talukaId =
+                            farmerData?.taluka || formData.taluka;
+
+                          // If we have a taluka ID, find the matching label from the taluka array
+                          if (talukaId) {
+                            const talukaObj = taluka.find(
+                              (opt) => opt.value === talukaId
+                            );
+                            return talukaObj?.label || "Unknown Taluka";
+                          }
+
+                          // Default text if no taluka is selected
+                          return "Select Taluka";
+                        })()}
                       </Text>
                       <AntDesign name="down" size={16} color="gray" />
                     </TouchableOpacity>

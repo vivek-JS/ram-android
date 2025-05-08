@@ -29,7 +29,7 @@ const SignIn = () => {
       };
 
       const response = await axiosInstance.post("/user/login", payload);
-
+      console.log(response);
       // Handle successful login
       if (response.data) {
         setUser(response.data);
@@ -39,6 +39,7 @@ const SignIn = () => {
       }
     } catch (error) {
       // Detailed error handling
+      console.log(error);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||

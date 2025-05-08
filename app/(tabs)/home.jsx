@@ -53,7 +53,6 @@ const Home = () => {
           password: newPassword,
           isOnboarded: true,
         }));
-        isOnboarded = true;
       }
     } else {
       Alert.alert("Error", "Passwords do not match. Please try again.");

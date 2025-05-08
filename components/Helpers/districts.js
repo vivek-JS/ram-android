@@ -184,29 +184,32 @@ export const getSlots = async (seFunction, plantId, subtypeId) => {
         (slot) => slot?.status
       );
       seFunction(
-        data.map((district) => {
-          const {
-            startDay,
-            endDay,
-            month,
-            totalBookedPlants,
-            totalPlants,
-            status,
-            _id,
-          } = district || {};
-          const start = moment(startDay, "DD-MM-YYYY").format("D");
-          const end = moment(endDay, "DD-MM-YYYY").format("D");
-          const monthYear = moment(startDay, "DD-MM-YYYY").format("MMMM, YYYY");
-          if (!status) {
-            return;
-          }
-          return {
-            label: `${start} - ${end} ${monthYear} (${
-              totalPlants + totalBookedPlants - totalBookedPlants
-            })`,
-            value: _id,
-          };
-        })
+        data
+          .map((district) => {
+            const {
+              startDay,
+              endDay,
+              month,
+              totalBookedPlants,
+              totalPlants,
+              status,
+              _id,
+            } = district || {};
+            const start = moment(startDay, "DD-MM-YYYY").format("D");
+            const end = moment(endDay, "DD-MM-YYYY").format("D");
+            const monthYear = moment(startDay, "DD-MM-YYYY").format(
+              "MMMM, YYYY"
+            );
+            if (!status) {
+              return;
+            }
+            return {
+              label: `${start} - ${end} ${monthYear}`,
+              value: _id,
+              available: totalPlants + totalBookedPlants - totalBookedPlants,
+            };
+          })
+          .filter((data) => data?.available)
       );
     }
   } catch (error) {

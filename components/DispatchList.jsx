@@ -56,7 +56,8 @@ const PlaceCard = ({ item, index, getOrders, jobTitle }) => {
     farmReadyDate: farmReadyDateApi,
   } = item || {};
 
-  const { name, district, taluka, village, mobileNumber } = farmer || {};
+  const { name, district, taluka, village, mobileNumber, talukaName } =
+    farmer || {};
   const [isCollapsed, setIsCollapsed] = useState(true);
   const handleCollapseToggle = () => setIsCollapsed(!isCollapsed);
   const [showFarmReadyDatePicker, setShowFarmReadyDatePicker] = useState(false);
@@ -251,6 +252,7 @@ const PlaceCard = ({ item, index, getOrders, jobTitle }) => {
                 rate,
                 payment,
                 orderId,
+                talukaName,
               }}
             />
           </View>

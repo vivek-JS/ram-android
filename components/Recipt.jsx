@@ -20,7 +20,24 @@ const generatePDF = async (orderData) => {
       rate,
       payment,
       orderId,
+      talukaName,
+      bookingSlot,
     } = orderData;
+
+    // Format the delivery date from bookingSlot
+    let deliveryDateText = "Not specified";
+    if (bookingSlot && bookingSlot.length > 0) {
+      const slot = bookingSlot[0];
+      if (slot.startDay && slot.endDay && slot.month) {
+        // Format as "8 April - 14 April, 2025"
+        const startDay = parseInt(slot.startDay.split("-")[0]);
+        const endDay = parseInt(slot.endDay.split("-")[0]);
+        const month = slot.month;
+        const year = slot.startDay.split("-")[2] || new Date().getFullYear();
+
+        deliveryDateText = `${startDay} ${month} - ${endDay} ${month}, ${year}`;
+      }
+    }
 
     const totalAmount = rate * numberOfPlants;
     const totalPaid = getTotalPaidAmount(payment);
@@ -148,7 +165,7 @@ const generatePDF = async (orderData) => {
             <div class="header">
               <div class="logo">ORDER RECEIPT</div>
               <div class="order-info">
-                Order #${orderId} | ${moment(createdAt).format("DD MMM YYYY")}
+                ${moment(createdAt).format("DD MMM YYYY")}
               </div>
             </div>
             
@@ -161,7 +178,7 @@ const generatePDF = async (orderData) => {
                 </div>
                 <div class="detail-row">
                   <span class="label">Location</span>
-                  <span class="value">${village}, ${taluka}</span>
+                  <span class="value">${village}, ${talukaName}</span>
                 </div>
               </div>
             </div>
@@ -184,6 +201,10 @@ const generatePDF = async (orderData) => {
                 <div class="detail-row">
                   <span class="label">Rate per Plant</span>
                   <span class="value">₹${rate}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Delivery Date</span>
+                  <span class="value">${deliveryDateText}</span>
                 </div>
               </div>
             </div>
@@ -340,9 +361,7 @@ const SharingButtons = ({ orderData }) => (
   <View
     style={{
       flexDirection: "row",
-      //   position: "absolute",
       left: 12,
-      // top: 12,
       gap: 8,
     }}
   >
@@ -368,22 +387,6 @@ const SharingButtons = ({ orderData }) => (
     >
       <Feather name="share-2" size={16} color="#FFF" />
     </TouchableOpacity>
-
-    {/* <TouchableOpacity
-      style={{
-        backgroundColor: "#3B82F6",
-        padding: 8,
-        borderRadius: 20,
-        elevation: 2,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 1.41,
-      }}
-      onPress={() => downloadAndShare(orderData)}
-    >
-      <Feather name="download" size={16} color="#FFF" />
-    </TouchableOpacity> */}
   </View>
 );
 
