@@ -55,7 +55,7 @@ const PlaceCard = ({ item, index, getOrders, jobTitle }) => {
     _id,
     farmReadyDate: farmReadyDateApi,
   } = item || {};
-
+  console.log("farmReadyDateApi", item);
   const { name, district, taluka, village, mobileNumber, talukaName } =
     farmer || {};
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -486,55 +486,53 @@ const PlaceCard = ({ item, index, getOrders, jobTitle }) => {
           </View>
         </View>
 
-        {jobTitle === "OFFICE_STAFF" ||
-          (jobTitle === "OFFICE_ADMIN" && (
-            <TouchableOpacity
-              onPress={() => setShowFarmReadyDatePicker(true)}
+        {(jobTitle === "OFFICE_STAFF" || jobTitle === "OFFICE_ADMIN") && (
+          <TouchableOpacity
+            onPress={() => setShowFarmReadyDatePicker(true)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginVertical: 8,
+            }}
+          >
+            <Text style={{ fontSize: 14, color: "#111827", marginRight: 8 }}>
+              Farm Ready Date:{" "}
+              <Text style={{ fontWeight: "600" }}>
+                {farmReadyDate
+                  ? moment(farmReadyDate).format("DD-MMM-YYYY")
+                  : "Not set"}
+              </Text>
+            </Text>
+            <Feather name="calendar" size={16} color="#059669" />
+          </TouchableOpacity>
+        )}
+        {(jobTitle === "OFFICE_STAFF" || jobTitle === "OFFICE_ADMIN") && (
+          <TouchableOpacity
+            onPress={() => {
+              // Add your farm ready API call here
+              pacthOrders({ orderStatus: "FARM_READY", id: _id });
+            }}
+            style={{
+              backgroundColor: !farmReadyDate ? "#059669" : "#D1D5DB",
+              paddingVertical: 8,
+              paddingHorizontal: 16,
+              borderRadius: 8,
+              alignItems: "center",
+              opacity: farmReadyDate ? 1 : 0.5,
+            }}
+            //   disabled={!farmReadyDate}
+          >
+            <Text
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginVertical: 8,
+                color: "#ffffff",
+                fontSize: 14,
+                fontWeight: "600",
               }}
             >
-              <Text style={{ fontSize: 14, color: "#111827", marginRight: 8 }}>
-                Farm Ready Date:{" "}
-                <Text style={{ fontWeight: "600" }}>
-                  {farmReadyDate
-                    ? moment(farmReadyDate).format("DD-MMM-YYYY")
-                    : "Not set"}
-                </Text>
-              </Text>
-              <Feather name="calendar" size={16} color="#059669" />
-            </TouchableOpacity>
-          ))}
-        {jobTitle === "OFFICE_STAFF" ||
-          (jobTitle === "OFFICE_ADMIN" && (
-            <TouchableOpacity
-              onPress={() => {
-                // Add your farm ready API call here
-                pacthOrders({ orderStatus: "FARM_READY", id: _id });
-              }}
-              style={{
-                backgroundColor: farmReadyDate ? "#059669" : "#D1D5DB",
-                paddingVertical: 8,
-                paddingHorizontal: 16,
-                borderRadius: 8,
-                alignItems: "center",
-                opacity: farmReadyDate ? 1 : 0.5,
-              }}
-              disabled={!farmReadyDate}
-            >
-              <Text
-                style={{
-                  color: "#ffffff",
-                  fontSize: 14,
-                  fontWeight: "600",
-                }}
-              >
-                Farm Ready
-              </Text>
-            </TouchableOpacity>
-          ))}
+              Farm Ready
+            </Text>
+          </TouchableOpacity>
+        )}
         {showFarmReadyDatePicker && (
           <DateTimePicker
             value={farmReadyDate || new Date()}
@@ -1026,7 +1024,10 @@ const DispatchList = () => {
               : sales_id,
           search: debouncedSearchQuery,
           dispatched: true,
-          status: "DISPATCH_PROCESS,DISPATCHED",
+          status:
+            jobTitle === "OFFICE_STAFF" || jobTitle === "OFFICE_ADMIN"
+              ? "DISPATCH_PROCESS,DISPATCHED,ACCEPTED,FARM_READY"
+              : "DISPATCH_PROCESS,DISPATCHED",
         },
       });
       if (response.data) {

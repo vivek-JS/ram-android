@@ -33,6 +33,7 @@ import {
   getVillages,
 } from "../components/Helpers/districts";
 import { Loader } from "../components";
+import { getWalleetDetails } from "../components/Helpers/orderApicalls";
 
 const AddPlaceForm = () => {
   const router = useRouter();
@@ -87,6 +88,8 @@ const AddPlaceForm = () => {
     },
   ]);
   const [showCavityPicker, setShowCavityPicker] = useState(false);
+  const [quotaType, setQuotaType] = useState(null); // "dealer" or "company"
+  const [dealerWallet, setDelaerWallet] = useState({}); // Add this state
 
   const [formData, setFormData] = useState({
     date: mode ? new Date(itemData?.createdAt) : new Date(),
@@ -124,6 +127,13 @@ const AddPlaceForm = () => {
   const [available, setAvailable] = useState(null);
   const [dealers, setDealers] = useState([]);
   console.log("sales", dealers);
+  useEffect(() => {
+    if (jobTitle !== "DEALER") {
+      return;
+    }
+    getWalleetDetails(_id, setDelaerWallet);
+  }, [_id]);
+  console.log("walletDetials", dealerWallet);
   useEffect(() => {
     if (!farmerData && !farmerData?.name) {
       setFormData({
@@ -241,6 +251,7 @@ const AddPlaceForm = () => {
                 bookingSlot: formData.selectedSlot,
                 orderPaymentStatus: "PENDING",
                 cavity: formData?.cavity,
+                componyQuota: quotaType === "company", // Add this line to set componyQuota flag
               };
               console.log(payload);
               console.log(formData);
@@ -277,7 +288,7 @@ const AddPlaceForm = () => {
     );
   };
   const handleSubmitDelaer = async () => {
-    console.log("here3");
+    console.log("here3", quotaType);
 
     // Show confirmation alert before submission
     Alert.alert(
@@ -308,6 +319,7 @@ const AddPlaceForm = () => {
                 dealerOrder: true,
                 dealer: formData?.sales || _id,
                 salesPerson: _id,
+                componyQuota: quotaType === "company", // Add this line to set componyQuota flag
               };
 
               const response = await axiosInstance.post(
@@ -364,6 +376,32 @@ const AddPlaceForm = () => {
   };
   console.log(formData);
   // Function to stop voice recognition
+  // Add a function to get remaining quantity for selected slot
+  const getRemainingQuantity = () => {
+    if (
+      !dealerWallet?.plantDetails ||
+      !formData.plant ||
+      !formData.subtype ||
+      !formData.selectedSlot
+    ) {
+      return null;
+    }
+
+    // Find plant and subtype match
+    const plantDetail = dealerWallet.plantDetails.find(
+      (plant) =>
+        plant.plantType === formData.plant && plant.subType === formData.subtype
+    );
+
+    if (!plantDetail) return null;
+
+    // Find slot match
+    const slot = plantDetail.slotDetails.find(
+      (slot) => slot.slotId === formData.selectedSlot
+    );
+
+    return slot ? slot.remainingQuantity : null;
+  };
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Loader isLoading={loading} />
@@ -862,6 +900,78 @@ const AddPlaceForm = () => {
 
             <View>
               <Text className="text-gray-700 mb-2">No of Plants</Text>
+              {jobTitle === "DEALER" && bulkOrder === false && (
+                <View className="mt-2">
+                  <Text className="text-gray-700 mb-2">Select Quota Type</Text>
+                  <View className="flex-row items-center space-x-4 p-2 bg-gray-50 rounded-lg">
+                    <TouchableOpacity
+                      onPress={() => setQuotaType("dealer")}
+                      className="flex-row items-center"
+                    >
+                      <View
+                        className={`h-5 w-5 rounded-full border border-gray-400 mr-2 items-center justify-center ${
+                          quotaType === "dealer"
+                            ? "bg-blue-500 border-blue-500"
+                            : "bg-white"
+                        }`}
+                      >
+                        {quotaType === "dealer" && (
+                          <View className="h-3 w-3 rounded-full bg-white" />
+                        )}
+                      </View>
+                      <Text
+                        className={
+                          quotaType === "dealer"
+                            ? "font-medium text-blue-500"
+                            : "text-gray-700"
+                        }
+                      >
+                        From Dealer Quota
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => setQuotaType("company")}
+                      className="flex-row items-center"
+                    >
+                      <View
+                        className={`h-5 w-5 rounded-full border border-gray-400 mr-2 items-center justify-center ${
+                          quotaType === "company"
+                            ? "bg-blue-500 border-blue-500"
+                            : "bg-white"
+                        }`}
+                      >
+                        {quotaType === "company" && (
+                          <View className="h-3 w-3 rounded-full bg-white" />
+                        )}
+                      </View>
+                      <Text
+                        className={
+                          quotaType === "company"
+                            ? "font-medium text-blue-500"
+                            : "text-gray-700"
+                        }
+                      >
+                        From Company Quota
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View>
+                    {jobTitle === "DEALER" &&
+                      quotaType === "dealer" &&
+                      formData.selectedSlot && (
+                        <View className="mt-2 p-3 bg-gray-100 rounded-lg">
+                          <Text className="text-gray-800">
+                            Your quota for this slot:{" "}
+                            {getRemainingQuantity() !== null
+                              ? getRemainingQuantity()
+                              : "Loading..."}
+                          </Text>
+                        </View>
+                      )}
+                  </View>
+                </View>
+              )}
               <TextInput
                 className="border border-gray-200 rounded-lg p-3 bg-white"
                 placeholder="Enter no of plants"

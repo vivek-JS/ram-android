@@ -4,7 +4,7 @@ import axiosInstance from "../api/api_instance";
 export const getWalleetDetails = async (
   dealer_id,
   setDelaerWallet,
-  setLoading
+  setLoading = () => {}
 ) => {
   try {
     setLoading(true);

@@ -137,10 +137,11 @@ const PlaceCard = ({ item, index, getOrders, delaerWallet, jobTitle }) => {
     addPayment(newPayment);
     setAddPaymentModalVisible(false);
   };
-
+  const { user } = useGlobalContext();
+  const sales_id = user?.response?.data?._id;
   const addPayment = async (formData) => {
     try {
-      let paymentData = { ...newPayment };
+      let paymentData = { ...newPayment, user: sales_id };
 
       // If DEALER and wallet payment is selected
       if (jobTitle === "DEALER" && newPayment.useWallet) {
@@ -623,20 +624,342 @@ const PlaceCard = ({ item, index, getOrders, delaerWallet, jobTitle }) => {
           >
             <View
               style={{
-                backgroundColor: "#FFF",
-                borderRadius: 16,
-                padding: 20,
-                width: "85%",
+                flex: 1,
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              <Text
-                style={{ fontSize: 18, fontWeight: "700", marginBottom: 16 }}
+              <View
+                style={{
+                  backgroundColor: "#FFF",
+                  borderRadius: 16,
+                  padding: 20,
+                  width: "85%",
+                }}
               >
-                Add Payment
-              </Text>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "700", marginBottom: 16 }}
+                >
+                  Add Payment
+                </Text>
 
-              {/* Payment form fields... */}
-              {/* (Payment modal content remains the same) */}
+                {/* Paid Amount */}
+                <TextInput
+                  style={{
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#D1D5DB",
+                    marginBottom: 16,
+                    paddingHorizontal: 8,
+                    fontSize: 16,
+                    color: "#1F2937",
+                  }}
+                  placeholder="Enter Paid Amount"
+                  value={newPayment.paidAmount}
+                  onChangeText={(text) =>
+                    setNewPayment({ ...newPayment, paidAmount: text })
+                  }
+                  keyboardType="numeric"
+                />
+
+                {/* Mode of Payment */}
+                <Picker
+                  selectedValue={newPayment.modeOfPayment}
+                  style={{
+                    height: 50,
+                    marginBottom: 16,
+                    backgroundColor: "#F3F4F6",
+                    borderRadius: 8,
+                  }}
+                  onValueChange={(itemValue) => {
+                    setNewPayment({ ...newPayment, modeOfPayment: itemValue });
+                  }}
+                >
+                  <Picker.Item label="Select Mode of Payment" value="" />
+                  <Picker.Item label="Cash" value="Cash" />
+                  <Picker.Item label="Phone Pe" value="Phone Pe" />
+                  <Picker.Item label="Google Pay" value="Google Pay" />
+                  <Picker.Item label="Cheque" value="Cheque" />
+                  <Picker.Item label="JPCB" value="JPCB" />
+                </Picker>
+
+                {/* Conditional Bank Name */}
+                {newPayment.modeOfPayment === "Cheque" && (
+                  <TextInput
+                    style={{
+                      borderBottomWidth: 1,
+                      borderBottomColor: "#D1D5DB",
+                      marginBottom: 16,
+                      paddingHorizontal: 8,
+                      fontSize: 16,
+                      color: "#1F2937",
+                    }}
+                    placeholder="Enter Bank Name"
+                    value={newPayment.bankName}
+                    onChangeText={(text) =>
+                      setNewPayment({ ...newPayment, bankName: text })
+                    }
+                  />
+                )}
+
+                {/* Payment Date */}
+                <TouchableOpacity
+                  style={{
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#D1D5DB",
+                    marginBottom: 16,
+                    paddingHorizontal: 8,
+                  }}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={{ fontSize: 14, color: "#374151" }}>
+                    Payment Date:{" "}
+                    <Text style={{ fontWeight: "600" }}>
+                      {moment(newPayment.paymentDate).format("DD-MMM-YYYY")}
+                    </Text>
+                  </Text>
+                </TouchableOpacity>
+
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={newPayment.paymentDate}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                  />
+                )}
+
+                {/* Image Picker and Camera */}
+                {/* Image Picker and Camera */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text
+                    style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                  >
+                    Upload Payment Receipt
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: "#10B981",
+                        paddingVertical: 8,
+                        paddingHorizontal: 16,
+                        borderRadius: 8,
+                        flex: 0.48,
+                        alignItems: "center",
+                      }}
+                      onPress={openCamera}
+                    >
+                      <Text style={{ color: "#FFF", fontWeight: "700" }}>
+                        Take Photo
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: "#3B82F6",
+                        paddingVertical: 8,
+                        paddingHorizontal: 16,
+                        borderRadius: 8,
+                        flex: 0.48,
+                        alignItems: "center",
+                      }}
+                      onPress={openImagePicker}
+                    >
+                      <Text style={{ color: "#FFF", fontWeight: "700" }}>
+                        Upload
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Display Uploaded Images */}
+                {/* Display Uploaded Images */}
+                <View style={{ marginTop: 16 }}>
+                  {newPayment.receiptPhoto.length > 0 &&
+                    newPayment.receiptPhoto.map((uri, index) => (
+                      <View
+                        key={index}
+                        style={{
+                          position: "relative",
+                          marginBottom: 8,
+                          marginRight: 8,
+                          alignItems: "flex-start",
+                          width: 100,
+                          height: 100,
+                        }}
+                      >
+                        <Image
+                          source={{ uri }}
+                          style={{
+                            width: 100,
+                            height: 100,
+                            borderRadius: 8,
+                          }}
+                        />
+                        <TouchableOpacity
+                          style={{
+                            position: "absolute",
+                            top: 4,
+                            left: 4,
+                            backgroundColor: "rgba(255, 0, 0, 0.8)",
+                            borderRadius: 12,
+                            padding: 4,
+                          }}
+                          onPress={() => {
+                            setNewPayment({
+                              ...newPayment,
+                              receiptPhoto: newPayment.receiptPhoto.filter(
+                                (imageUri, imgIndex) => imgIndex !== index
+                              ),
+                            });
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#FFF",
+                              fontSize: 12,
+                              fontWeight: "700",
+                            }}
+                          >
+                            ✕
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                </View>
+                {/* Before the Save and Cancel Buttons */}
+                {/* Before the Save and Cancel Buttons */}
+                {jobTitle === "DEALER" && (
+                  <View className="mb-4">
+                    <View className="flex-row items-center justify-between bg-gray-50 p-4 rounded-xl mb-2">
+                      <View className="flex-row items-center">
+                        <TouchableOpacity
+                          onPress={() =>
+                            setNewPayment((prev) => ({
+                              ...prev,
+                              useWallet: !prev.useWallet,
+                            }))
+                          }
+                          className="mr-3"
+                        >
+                          <View
+                            className={`w-5 h-5 rounded border ${
+                              newPayment.useWallet
+                                ? "bg-green-500 border-green-500"
+                                : "border-gray-300"
+                            } justify-center items-center`}
+                          >
+                            {newPayment.useWallet && (
+                              <Feather name="check" size={14} color="#fff" />
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                        <Text className="text-gray-700 font-medium">
+                          Pay from Wallet
+                        </Text>
+                      </View>
+                      <View>
+                        <Text className="text-xs text-gray-500">
+                          Wallet Balance
+                        </Text>
+                        <Text
+                          className={`text-base font-bold ${
+                            newPayment.useWallet &&
+                            Number(newPayment.paidAmount) >
+                              (financial?.availableAmount ?? 0)
+                              ? "text-red-600"
+                              : "text-gray-800"
+                          }`}
+                        >
+                          ₹{(financial?.availableAmount ?? 0)?.toLocaleString()}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Warning messages for wallet payment */}
+                    {newPayment.useWallet && (
+                      <>
+                        {Number(newPayment.paidAmount) >
+                          (financial?.availableAmount ?? 0) && (
+                          <View className="bg-red-50 p-3 rounded-lg mb-2">
+                            <Text className="text-sm text-red-600 font-medium">
+                              Insufficient wallet balance! Available: ₹
+                              {(
+                                financial?.availableAmount ?? 0
+                              )?.toLocaleString()}
+                            </Text>
+                          </View>
+                        )}
+
+                        {!newPayment.paidAmount && (
+                          <View className="bg-amber-50 p-3 rounded-lg mb-2">
+                            <Text className="text-sm text-amber-600 font-medium">
+                              Please enter payment amount
+                            </Text>
+                          </View>
+                        )}
+
+                        {Number(newPayment.paidAmount) <=
+                          (financial?.availableAmount ?? 0) &&
+                          newPayment.paidAmount && (
+                            <View className="bg-green-50 p-3 rounded-lg mb-2">
+                              <Text className="text-sm text-green-600 font-medium">
+                                Sufficient balance available
+                              </Text>
+                            </View>
+                          )}
+                      </>
+                    )}
+                  </View>
+                )}
+
+                {/* Save and Cancel Buttons */}
+                <View className="flex-row justify-between">
+                  <TouchableOpacity
+                    className={`py-3 rounded-lg flex-1 items-center mr-2 ${
+                      jobTitle === "DEALER" &&
+                      newPayment.useWallet &&
+                      (Number(newPayment.paidAmount) >
+                        (financial?.availableAmount ?? 0) ||
+                        !newPayment.paidAmount)
+                        ? "bg-gray-300"
+                        : "bg-green-500"
+                    }`}
+                    onPress={handleSavePayment}
+                    disabled={
+                      jobTitle === "DEALER" &&
+                      newPayment.useWallet &&
+                      (Number(newPayment.paidAmount) >
+                        (financial?.availableAmount ?? 0) ||
+                        !newPayment.paidAmount)
+                    }
+                  >
+                    <Text
+                      className={`font-bold ${
+                        jobTitle === "DEALER" &&
+                        newPayment.useWallet &&
+                        (Number(newPayment.paidAmount) >
+                          (financial?.availableAmount ?? 0) ||
+                          !newPayment.paidAmount)
+                          ? "text-gray-500"
+                          : "text-white"
+                      }`}
+                    >
+                      Save
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-red-500 py-3 rounded-lg flex-1 items-center ml-2"
+                    onPress={closeAddPaymentModal}
+                  >
+                    <Text className="text-white font-bold">Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </View>
         </Modal>
