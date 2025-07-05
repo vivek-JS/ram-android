@@ -4,34 +4,44 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, ScrollView, Dimensions, Alert, Image } from "react-native";
 
 import { images } from "../../constants";
-import { createUser } from "../../lib/appwrite";
 import { CustomButton, FormField } from "../../components";
 import { useGlobalContext } from "../../context/GlobalProvider";
 
 const SignUp = () => {
-  const { setUser, setIsLogged } = useGlobalContext();
+  const { register } = useGlobalContext();
 
   const [isSubmitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     username: "",
+    phoneNumber: "",
     email: "",
     password: "",
   });
 
-  const submit = async () => {
-    if (form.username === "" || form.email === "" || form.password === "") {
+  const handleRegister = async () => {
+    if (!form.username || !form.phoneNumber || !form.email || !form.password) {
       Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (form.password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters long");
+      return;
     }
 
     setSubmitting(true);
     try {
-      const result = await createUser(form.email, form.password, form.username);
-      setUser(result);
-      setIsLogged(true);
+      const result = await register(form);
 
-      router.replace("/home");
+      if (result.success) {
+        // Navigate to home screen
+        router.replace("/(tabs)/home");
+      } else {
+        Alert.alert("Error", result.error || "Registration failed");
+      }
     } catch (error) {
-      Alert.alert("Error", error.message);
+      console.error("Registration error:", error);
+      Alert.alert("Error", "An error occurred during registration");
     } finally {
       setSubmitting(false);
     }
@@ -47,20 +57,30 @@ const SignUp = () => {
           }}
         >
           <Image
-            source={images.logo}
+            source={images.logoram}
             resizeMode="contain"
-            className="w-[115px] h-[34px]"
+            className="w-[400px] h-[150px]"
           />
 
           <Text className="text-2xl font-semibold text-white mt-10 font-psemibold">
-            Sign Up to Aora
+            राम बायोटेक{" "}
           </Text>
 
           <FormField
-            title="Username"
+            title="Full Name"
             value={form.username}
             handleChangeText={(e) => setForm({ ...form, username: e })}
             otherStyles="mt-10"
+            placeholder="Enter your full name"
+          />
+
+          <FormField
+            title="Phone Number"
+            value={form.phoneNumber}
+            handleChangeText={(e) => setForm({ ...form, phoneNumber: e })}
+            otherStyles="mt-7"
+            keyboardType="phone-pad"
+            placeholder="Enter your phone number"
           />
 
           <FormField
@@ -69,6 +89,7 @@ const SignUp = () => {
             handleChangeText={(e) => setForm({ ...form, email: e })}
             otherStyles="mt-7"
             keyboardType="email-address"
+            placeholder="Enter your email"
           />
 
           <FormField
@@ -76,11 +97,13 @@ const SignUp = () => {
             value={form.password}
             handleChangeText={(e) => setForm({ ...form, password: e })}
             otherStyles="mt-7"
+            placeholder="Enter your password"
+            secureTextEntry
           />
 
           <CustomButton
             title="Sign Up"
-            handlePress={submit}
+            handlePress={handleRegister}
             containerStyles="mt-7"
             isLoading={isSubmitting}
           />

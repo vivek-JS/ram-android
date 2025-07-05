@@ -5,16 +5,16 @@ import { View, Text, ScrollView, Dimensions, Alert, Image } from "react-native";
 import { images } from "../../constants";
 import { CustomButton, FormField } from "../../components";
 import { useGlobalContext } from "../../context/GlobalProvider";
-import axiosInstance from "../../components/api/api_instance";
+
 const SignIn = () => {
-  const { setUser, setIsLogged } = useGlobalContext();
+  const { login } = useGlobalContext();
   const [isSubmitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
-    email: "",
-    password: "",
+    email: "7588686452", // Pre-filled with test credentials
+    password: "432100", // Pre-filled with test credentials
   });
 
-  const fetchNames = async () => {
+  const handleLogin = async () => {
     try {
       setSubmitting(true);
 
@@ -23,33 +23,31 @@ const SignIn = () => {
         return;
       }
 
-      const payload = {
-        phoneNumber: parseInt(form.email),
+      console.log("🔐 Attempting login with:", {
+        phoneNumber: form.email,
         password: form.password,
-      };
+      });
 
-      const response = await axiosInstance.post("/user/login", payload);
-      console.log(response);
-      // Handle successful login
-      if (response.data) {
-        setUser(response.data);
-        setIsLogged(true);
-        // Alert.alert("Success", "User signed in successfully");
-        router.replace("/home");
+      const result = await login(form.email, form.password);
+
+      console.log("📱 Login result:", result);
+
+      if (result.success) {
+        console.log("✅ Login successful, navigating to home");
+        // Navigate to home screen
+        router.replace("/(tabs)/home");
+      } else {
+        console.log("❌ Login failed:", result.error);
+        Alert.alert("Error", result.error || "Login failed");
       }
     } catch (error) {
-      // Detailed error handling
-      console.log(error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "An error occurred during sign in";
-
-      Alert.alert("Error", errorMessage);
+      console.error("💥 Login error:", error);
+      Alert.alert("Error", "An error occurred during sign in");
     } finally {
       setSubmitting(false);
     }
   };
+
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView>
@@ -62,20 +60,24 @@ const SignIn = () => {
           <Image
             source={images.logoram}
             resizeMode="contain"
-            className="w-[400px] h-[150
-            px]"
+            className="w-[400px] h-[150px]"
           />
 
           <Text className="text-2xl font-semibold text-white mt-10 font-psemibold">
             राम बायोटेक{" "}
           </Text>
 
+          <Text className="text-sm text-gray-300 mt-2 text-center">
+            Test Credentials: 7588686452 / 432100
+          </Text>
+
           <FormField
-            title="Email"
+            title="Phone Number"
             value={form.email}
             handleChangeText={(e) => setForm({ ...form, email: e })}
             otherStyles="mt-7"
-            keyboardType="email-address"
+            keyboardType="phone-pad"
+            placeholder="Enter your phone number"
           />
 
           <FormField
@@ -83,11 +85,13 @@ const SignIn = () => {
             value={form.password}
             handleChangeText={(e) => setForm({ ...form, password: e })}
             otherStyles="mt-7"
+            placeholder="Enter your password"
+            secureTextEntry
           />
 
           <CustomButton
             title="Sign In"
-            handlePress={fetchNames}
+            handlePress={handleLogin}
             containerStyles="mt-7"
             isLoading={isSubmitting}
           />

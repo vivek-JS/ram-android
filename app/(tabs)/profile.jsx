@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import SearchablePicker from "../../components/SearchablePicker";
 import { useGlobalContext } from "../../context/GlobalProvider";
 import {
@@ -20,13 +21,21 @@ import {
   getVillages,
 } from "../../components/Helpers/districts";
 import axiosInstance from "../../components/api/api_instance";
+
 export const updateUser = async (formData, id) => {
   try {
-    // Send PATCH request to the server
-    const response = await axiosInstance.patch("/user/updateUser", {
+    const requestData = {
       ...formData,
       id,
-    });
+    };
+    console.log(
+      "updateUser - Request data:",
+      JSON.stringify(requestData, null, 2)
+    );
+    console.log("updateUser - ID:", id);
+
+    // Send PATCH request to the server
+    const response = await axiosInstance.patch("/user/updateUser", requestData);
 
     if (response.status === 200) {
       Alert.alert("Success", "Profile updated successfully");
@@ -39,8 +48,9 @@ export const updateUser = async (formData, id) => {
     Alert.alert("Error", "An error occurred while updating the profile");
   }
 };
+
 const Profile = () => {
-  const { user, setUser } = useGlobalContext();
+  const { user, setUser, logout } = useGlobalContext();
   const {
     name,
     email,
@@ -72,6 +82,7 @@ const Profile = () => {
     type: type || "",
     phoneNumber: phoneNumber || "",
   });
+
   useEffect(() => {
     getStates(setStates);
   }, []);
@@ -112,6 +123,28 @@ const Profile = () => {
     }
   };
 
+  const handleLogout = async () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await logout();
+            router.replace("/");
+          } catch (error) {
+            console.error("Logout error:", error);
+            Alert.alert("Error", "Failed to logout");
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView className="bg-gray-100 h-full">
       <ScrollView>
@@ -125,20 +158,28 @@ const Profile = () => {
               <Text className="text-2xl font-bold text-white">
                 Profile Details
               </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  if (isEditable) {
-                    handleSave(); // Save changes
-                  } else {
-                    setIsEditable(true); // Enable edit mode
-                  }
-                }}
-                className="bg-white px-4 py-2 rounded-full"
-              >
-                <Text className="text-primary font-medium">
-                  {isEditable ? "Save" : "Edit"}
-                </Text>
-              </TouchableOpacity>
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  onPress={() => {
+                    if (isEditable) {
+                      handleSave(); // Save changes
+                    } else {
+                      setIsEditable(true); // Enable edit mode
+                    }
+                  }}
+                  className="bg-white px-4 py-2 rounded-full"
+                >
+                  <Text className="text-primary font-medium">
+                    {isEditable ? "Save" : "Edit"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleLogout}
+                  className="bg-red-500 px-4 py-2 rounded-full"
+                >
+                  <Text className="text-white font-medium">Logout</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             <View className="mb-4">
               <Text className="text-gray-100 mb-1">Name</Text>
@@ -169,7 +210,7 @@ const Profile = () => {
               />
             </View>
             <View>
-              <Text className="text-gray-100 mb-1">phoneNumber Number</Text>
+              <Text className="text-gray-100 mb-1">Phone Number</Text>
               <Text className="p-3 bg-gray-200 rounded-lg text-gray-700">
                 {formData.phoneNumber}
               </Text>

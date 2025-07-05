@@ -10,7 +10,12 @@ import { useGlobalContext } from "../context/GlobalProvider";
 const Welcome = () => {
   const { loading, isLogged } = useGlobalContext();
 
-  if (!loading && isLogged) return <Redirect href="/home" />;
+  console.log("🏠 Welcome screen - loading:", loading, "isLogged:", isLogged);
+
+  if (!loading && isLogged) {
+    console.log("🏠 Welcome screen - Redirecting to home");
+    return <Redirect href="/(tabs)/home" />;
+  }
 
   return (
     <SafeAreaView className="bg-primary h-full">
@@ -23,8 +28,8 @@ const Welcome = () => {
       >
         <View className="w-full flex justify-center items-center h-full px-4">
           <Image
-            source={images.logo}
-            className="w-[130px] h-[84px]"
+            source={images.logoram}
+            className="w-[400px] h-[150px]"
             resizeMode="contain"
           />
 
@@ -36,9 +41,9 @@ const Welcome = () => {
 
           <View className="relative mt-5">
             <Text className="text-3xl text-white font-bold text-center">
-              Discover Endless{"\n"}
-              Possibilities with{" "}
-              <Text className="text-secondary-200">Aora</Text>
+              राम बायोटेक{"\n"}
+              नर्सरी मैनेजमेंट{" "}
+              <Text className="text-secondary-200">सिस्टम</Text>
             </Text>
 
             <Image
@@ -49,13 +54,12 @@ const Welcome = () => {
           </View>
 
           <Text className="text-sm font-pregular text-gray-100 mt-7 text-center">
-            Where Creativity Meets Innovation: Embark on a Journey of Limitless
-            Exploration with Aora
+            नर्सरी प्रबंधन के लिए आधुनिक और कुशल समाधान
           </Text>
 
           <CustomButton
-            title="Continue with Email"
-            handlePress={() => router.push("/sign-in")}
+            title="लॉगिन करें"
+            handlePress={() => router.push("/(auth)/sign-in")}
             containerStyles="w-full mt-7"
           />
         </View>
