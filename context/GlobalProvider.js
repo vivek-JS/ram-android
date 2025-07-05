@@ -56,21 +56,6 @@ const GlobalProvider = ({ children }) => {
     }
   };
 
-  const register = async (userData) => {
-    try {
-      const result = await authService.register(userData);
-      if (result.success) {
-        setIsLogged(true);
-        setUser(result.user);
-        return { success: true };
-      }
-      return { success: false };
-    } catch (error) {
-      console.error("Registration error:", error);
-      return { success: false, error: error.message };
-    }
-  };
-
   const logout = async () => {
     try {
       console.log("🔄 GlobalProvider logout - Starting...");
@@ -96,7 +81,6 @@ const GlobalProvider = ({ children }) => {
         setUser,
         loading,
         login,
-        register,
         logout,
         checkAuthStatus,
       }}

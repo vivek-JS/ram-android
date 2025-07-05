@@ -1,73 +1,26 @@
 import { StatusBar } from "expo-status-bar";
-import { Redirect, router } from "expo-router";
-import { View, Text, Image, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { images } from "../constants";
-import { CustomButton, Loader } from "../components";
+import { Redirect } from "expo-router";
 import { useGlobalContext } from "../context/GlobalProvider";
 
-const Welcome = () => {
+const Index = () => {
   const { loading, isLogged } = useGlobalContext();
 
-  console.log("🏠 Welcome screen - loading:", loading, "isLogged:", isLogged);
+  console.log("🏠 Index screen - loading:", loading, "isLogged:", isLogged);
 
-  if (!loading && isLogged) {
-    console.log("🏠 Welcome screen - Redirecting to home");
+  // If still loading, show nothing (or a splash screen)
+  if (loading) {
+    return null;
+  }
+
+  // If logged in, go to home
+  if (isLogged) {
+    console.log("🏠 Index screen - Redirecting to home");
     return <Redirect href="/(tabs)/home" />;
   }
 
-  return (
-    <SafeAreaView className="bg-primary h-full">
-      <Loader isLoading={loading} />
-
-      <ScrollView
-        contentContainerStyle={{
-          height: "100%",
-        }}
-      >
-        <View className="w-full flex justify-center items-center h-full px-4">
-          <Image
-            source={images.logoram}
-            className="w-[400px] h-[150px]"
-            resizeMode="contain"
-          />
-
-          <Image
-            source={images.cards}
-            className="max-w-[380px] w-full h-[298px]"
-            resizeMode="contain"
-          />
-
-          <View className="relative mt-5">
-            <Text className="text-3xl text-white font-bold text-center">
-              राम बायोटेक{"\n"}
-              नर्सरी मैनेजमेंट{" "}
-              <Text className="text-secondary-200">सिस्टम</Text>
-            </Text>
-
-            <Image
-              source={images.path}
-              className="w-[136px] h-[15px] absolute -bottom-2 -right-8"
-              resizeMode="contain"
-            />
-          </View>
-
-          <Text className="text-sm font-pregular text-gray-100 mt-7 text-center">
-            नर्सरी प्रबंधन के लिए आधुनिक और कुशल समाधान
-          </Text>
-
-          <CustomButton
-            title="लॉगिन करें"
-            handlePress={() => router.push("/(auth)/sign-in")}
-            containerStyles="w-full mt-7"
-          />
-        </View>
-      </ScrollView>
-
-      <StatusBar backgroundColor="#161622" style="light" />
-    </SafeAreaView>
-  );
+  // If not logged in, go directly to login
+  console.log("🏠 Index screen - Redirecting to login");
+  return <Redirect href="/(auth)/sign-in" />;
 };
 
-export default Welcome;
+export default Index;
