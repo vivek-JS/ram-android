@@ -10,10 +10,8 @@ const getBaseUrl = () => {
     return "https://nursery-gzbt.onrender.com/api/v1/"; // or your API URL for web
   } else {
     // For mobile environment (iOS/Android)
-    if (__DEV__) {
-      // Development environment - use your backend URL
-      return "http://192.168.1.29:8000/api/v1/"; // Updated to correct IP
-    }
+    // Production environment - use live backend URL
+    return "https://nursery-gzbt.onrender.com/api/v1/";
   }
 };
 
